@@ -1026,6 +1026,12 @@ function bumpReact(name,kind){ const a=readLog(); if(!a.length) return; const e=
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, recTarget = null, recBase = "", lastResultAt = 0;
+// 音声入力が使えない理由を返す（使える場合は null）。ブラウザ非対応 or 非HTTPS(=マイク遮断)を判定
+function voiceUnavailableReason(){
+  if(!SR) return "このブラウザは音声入力に対応していないみたい。文字で入力してね。";
+  if(!window.isSecureContext) return "🎤 音声入力は「https://」の安全なページでしか使えません。\n\n今は「http://…」でこのPCに直接つないでいるため、スマホのブラウザがマイクをブロックしています（ブラウザの仕様です）。\n\n・文字入力なら、このまま使えます。\n・音声を使いたい場合は、ネット公開版（https://…）を開いてください。";
+  return null;
+}
 function startRec(targetTa, btn){
   if(!SR || rec) return;
   rec = new SR();
@@ -1047,9 +1053,15 @@ function startRec(targetTa, btn){
     recTarget.dispatchEvent(new Event("input"));
   };
   rec.onend = ()=>{ rec=null; document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec")); };
-  rec.onerror = ()=>{ try{rec&&rec.stop();}catch(_){} };
-  rec.start();
-  btn.classList.add("rec");
+  rec.onerror = (e)=>{
+    try{rec&&rec.stop();}catch(_){}
+    rec=null; document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec"));
+    if(e && (e.error==="not-allowed" || e.error==="service-not-allowed")){
+      alert("マイクを使えませんでした。\nブラウザのマイク許可がオフか、httpsでないため制限されています。文字入力を使ってください。");
+    }
+  };
+  try{ rec.start(); btn.classList.add("rec"); }
+  catch(err){ rec=null; alert("音声入力を開始できませんでした。文字で入力してください。"); }
 }
 const obsSet = new Set();
 function pendingObs(s){ if(!obsSet.has(s)){ obsSet.add(s); } }
@@ -1347,9 +1359,10 @@ function renderCharSelect(){
 
 $("#intake").addEventListener("input", ()=>{ $("#go").disabled = !$("#intake").value.trim(); });
 $("#go").onclick = startConsult;
-$("#mic1").onclick = ()=>{ if(!SR){ alert("このブラウザは音声入力に対応していません。文字で入力してください。"); return; } toggleRec($("#intake"), $("#mic1")); };
-$("#mic2").onclick = ()=>{ if(!SR){ alert("このブラウザは音声入力に対応していません。"); return; } toggleRec($("#reply"), $("#mic2")); };
-if(!SR){ $("#mic1").style.opacity=.4; $("#mic2").style.opacity=.4; }
+$("#mic1").onclick = ()=>{ const r=voiceUnavailableReason(); if(r){ alert(r); return; } toggleRec($("#intake"), $("#mic1")); };
+$("#mic2").onclick = ()=>{ const r=voiceUnavailableReason(); if(r){ alert(r); return; } toggleRec($("#reply"), $("#mic2")); };
+// 音声が使えない環境（非対応 or 非https）はマイクボタンを薄く表示
+if(voiceUnavailableReason()){ $("#mic1").style.opacity=.5; $("#mic2").style.opacity=.5; }
 
 /* ドック */
 function setSendEnabled(){ $("#send").disabled = busy || !($("#reply").value||"").trim(); }
