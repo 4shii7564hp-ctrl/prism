@@ -1,0 +1,12 @@
+{
+  "name": "prism",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PRISM - AI思考支援サービス（4人の偏ったAIとの対話）",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

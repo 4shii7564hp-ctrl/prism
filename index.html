@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRISM｜答えをくれない。だから、自分で考えはじめる。</title>
+<style>
+  /* ============ PRISM ライトテーマ：白×ネイビー×4色 ============ */
+  :root{
+    color-scheme: light;
+    --bg:#f4f5fa; --card:#ffffff; --card2:#eef0f8; --line:#e2e5f0;
+    --txt:#232a44; --sub:#8a90a8; --navy:#1b2a5e; --user:#1b2a5e;
+    --kuro:#3d4152; --ray:#f2762e; --mika:#159889; --yui:#7c6bd6;
+    --danger:#e14d4d; --ok:#19a974;
+    --prism:linear-gradient(90deg,#8ec5ff,#c9a7f5,#ffb199,#9ae6c9);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:'Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
+        background:var(--bg); color:var(--txt); font-size:15px; }
+  #app{ max-width:520px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+
+  header{ position:sticky; top:0; z-index:10; padding:10px 14px 8px; background:rgba(255,255,255,.94);
+          backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .hrow{ display:flex; align-items:center; gap:7px; }
+  .logo{ font-weight:900; font-size:20px; letter-spacing:.16em; color:var(--navy);
+         display:flex; align-items:center; gap:4px; }
+  .badge{ font-size:10px; color:var(--sub); }
+  #new-chat{ margin-left:auto; border:1px solid var(--navy); background:#fff; color:var(--navy);
+             border-radius:9999px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+  /* セッションステッパー */
+  .stepper{ display:flex; gap:6px; margin-top:8px; }
+  .step{ flex:1; text-align:center; font-size:10.5px; color:var(--sub); padding:4px 2px;
+         border-radius:8px; border:1px solid var(--line); background:#fff; line-height:1.5; }
+  .step b{ display:block; font-size:11px; }
+  .step.on{ color:var(--navy); border-color:var(--navy); font-weight:700; box-shadow:0 1px 6px rgba(27,42,94,.12); }
+  .step.done{ opacity:.5; }
+  .tabs{ display:flex; gap:6px; margin-top:8px; }
+  .tab{ flex:1; border:1px solid var(--line); background:#fff; color:var(--sub); border-radius:9999px;
+        padding:6px 0; font-size:12px; cursor:pointer; text-align:center; }
+  .tab.on{ color:#fff; border-color:var(--navy); background:var(--navy); font-weight:700; }
+
+  main{ flex:1; padding:14px 14px 8px; display:flex; flex-direction:column; gap:10px; }
+  .hide{ display:none !important; }
+
+  /* チャットが唐突にポッと出ないよう、フェード＋わずかに上へスライドしてスーッと現れる */
+  @keyframes prism-in{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+  .cline, .user, .qbub, .sessdiv, .hotline, .finishrow, .typing{
+    animation:prism-in .5s cubic-bezier(.22,.61,.36,1) both; }
+  @media (prefers-reduced-motion:reduce){
+    .cline, .user, .qbub, .sessdiv, .hotline, .finishrow, .typing{ animation:none; } }
+
+  /* ============ 入口 ============ */
+  .hero{ text-align:center; margin-top:6px; }
+  .hero .big{ font-size:30px; font-weight:900; letter-spacing:.2em; color:var(--navy);
+              display:flex; align-items:center; justify-content:center; gap:6px; }
+  .hero .copy{ margin-top:8px; font-size:15px; font-weight:800; line-height:1.8; color:var(--navy); }
+  .hero .sub{ margin-top:4px; font-size:12px; color:var(--sub); line-height:1.8; }
+  /* 5ステップ導線 */
+  .flowsteps{ display:flex; gap:6px; overflow-x:auto; padding:2px; scrollbar-width:none; }
+  .flowsteps::-webkit-scrollbar{ display:none; }
+  .fstep{ flex:none; font-size:10.5px; border:1.5px solid var(--navy); color:var(--navy); border-radius:10px;
+          padding:4px 10px; font-weight:700; background:#fff; display:flex; align-items:center; }
+  .fstep i{ font-style:normal; display:inline-grid; place-items:center; width:15px; height:15px; margin-right:4px;
+            border-radius:50%; background:var(--navy); color:#fff; font-size:9.5px; }
+  /* キャラセレクト（横スワイプカルーセル＋PC用矢印） */
+  .cs-wrap{ position:relative; }
+  .cs-scroll{ display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 2px 6px; scrollbar-width:none;
+              -webkit-overflow-scrolling:touch; }
+  .cs-scroll::-webkit-scrollbar{ display:none; }
+  .cs-arrow{ position:absolute; top:42%; z-index:3; width:34px; height:34px; border-radius:50%;
+             border:1px solid var(--line); background:rgba(255,255,255,.95); color:var(--navy);
+             font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 2px 10px rgba(27,42,94,.14);
+             display:grid; place-items:center; line-height:1; }
+  .cs-arrow.prev{ left:-4px; } .cs-arrow.next{ right:-4px; }
+  @media (hover:none){ .cs-arrow{ display:none; } }   /* スマホはスワイプで */
+  .ccard{ flex:0 0 44%; scroll-snap-align:center; border-radius:16px; overflow:hidden; position:relative;
+          aspect-ratio:3/4; cursor:pointer; border:2px solid var(--line); background:var(--card2); }
+  .ccard .art{ position:absolute; inset:0; display:grid; place-items:center; font-size:54px; color:#fff; }
+  .ccard .art img{ width:100%; height:100%; object-fit:cover; }
+  .ccard .meta{ position:absolute; left:0; right:0; bottom:0; padding:26px 10px 9px; color:#fff;
+                background:linear-gradient(transparent, rgba(18,22,40,.85)); }
+  .ccard .meta .n{ font-weight:800; font-size:13.5px; }
+  .ccard .meta .r{ font-size:9.5px; opacity:.85; }
+  .ccard .meta .b{ font-size:10px; line-height:1.55; margin-top:3px; opacity:.92; }
+  .ccard.sel{ border-color:var(--navy); box-shadow:0 0 0 3px rgba(27,42,94,.14); }
+  .ccard .pill{ position:absolute; top:8px; right:8px; font-size:10px; background:#fff; color:var(--navy);
+                border-radius:9999px; padding:2px 9px; font-weight:800; display:none; }
+  .ccard.sel .pill{ display:block; }
+  .cs-dots{ display:flex; justify-content:center; gap:5px; }
+  .cs-dots i{ width:6px; height:6px; border-radius:50%; background:#cdd2e4; }
+  .cs-dots i.on{ background:var(--navy); }
+  #cs-note{ text-align:center; font-size:11px; color:var(--sub); line-height:1.7; }
+  .sect{ font-size:12px; color:var(--navy); font-weight:800; margin:4px 2px 0; }
+  .intens{ display:flex; gap:6px; }
+  .iopt{ flex:1; background:#fff; border:1px solid var(--line); border-radius:12px; padding:9px 8px;
+         font-size:12px; cursor:pointer; text-align:center; color:var(--txt); line-height:1.5; }
+  .iopt small{ display:block; color:var(--sub); font-size:10px; margin-top:2px; }
+  .iopt.sel{ border:1.5px solid var(--navy); color:var(--navy); font-weight:800; box-shadow:0 1px 6px rgba(27,42,94,.10); }
+  .voicebox{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:12px; box-shadow:0 2px 10px rgba(27,42,94,.05); }
+  .voicebox textarea{ width:100%; border:none; background:transparent; color:var(--txt); resize:none;
+                      font-family:inherit; font-size:14px; line-height:1.7; min-height:88px; outline:none; }
+  .vrow{ display:flex; gap:8px; align-items:center; margin-top:6px; }
+  .micbtn{ width:46px; height:46px; border-radius:50%; border:1px solid var(--line); background:var(--card2);
+           font-size:20px; cursor:pointer; color:var(--txt); flex:none; }
+  .micbtn.rec{ background:var(--danger); border-color:var(--danger); animation:pulse 1.2s infinite; }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(225,77,77,.45)} 100%{box-shadow:0 0 0 14px rgba(225,77,77,0)} }
+  .gobtn{ flex:1; border:none; border-radius:9999px; padding:13px 0; font-size:14px; font-weight:800; cursor:pointer;
+          color:#fff; background:var(--navy); }
+  .gobtn:disabled{ opacity:.4; }
+  .vnote{ font-size:11px; color:var(--sub); text-align:center; line-height:1.8; }
+  .values{ display:flex; gap:6px; }
+  .val{ flex:1; background:#fff; border:1px solid var(--line); border-radius:12px; padding:8px 6px;
+        font-size:10.5px; font-weight:700; color:var(--navy); text-align:center; line-height:1.5; }
+  .val span{ display:block; font-size:16px; margin-bottom:2px; }
+
+  /* ============ チャット ============ */
+  .sessdiv{ text-align:center; margin:6px 0 2px; }
+  .sessdiv span{ display:inline-block; font-size:11px; font-weight:800; padding:5px 14px; border-radius:9999px;
+                 background:#fff; border:1.5px solid var(--navy); color:var(--navy); }
+  .sessdiv small{ display:block; color:var(--sub); font-size:10.5px; margin-top:4px; }
+  .user{ align-self:flex-end; max-width:82%; background:var(--user); color:#fff; padding:9px 13px;
+         border-radius:16px 16px 4px 16px; font-size:14px; line-height:1.7; white-space:pre-wrap; }
+  .cline{ display:flex; gap:8px; max-width:94%; }
+  .ava{ width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-size:16px; flex:none;
+        background:var(--card2); border:2px solid var(--line); margin-top:2px; overflow:hidden; }
+  .ava img{ width:100%; height:100%; object-fit:cover; }
+  .cbody{ min-width:0; }
+  .cname{ font-size:11px; font-weight:800; margin:0 0 3px 2px; display:flex; align-items:center; gap:6px; }
+  .cname .rto{ font-weight:400; font-size:10px; color:var(--sub); }
+  .bub{ background:#fff; border:1px solid var(--line); border-left:3px solid var(--line);
+        padding:9px 12px; border-radius:4px 14px 14px 14px; font-size:14px; line-height:1.75; white-space:pre-wrap;
+        box-shadow:0 1px 5px rgba(27,42,94,.05); }
+  .hyp{ font-size:10px; color:var(--sub); margin:3px 2px 0; }
+  .reacts{ display:flex; gap:6px; margin:5px 0 0 2px; }
+  .rbtn{ border:1px solid var(--line); background:#fff; color:var(--sub); border-radius:9999px;
+         padding:2px 9px; font-size:10.5px; cursor:pointer; }
+  .rbtn.on{ color:var(--navy); border-color:var(--navy); background:var(--card2); font-weight:700; }
+  .qbub{ align-self:stretch; background:var(--card2); border:1.5px dashed #aeb6d6; border-radius:14px; padding:11px 14px; }
+  .qbub .qh{ font-size:10.5px; color:var(--navy); font-weight:800; margin-bottom:4px; }
+  .qbub .qt{ font-size:14px; line-height:1.8; font-weight:600; }
+  .typing{ display:flex; align-items:center; gap:8px; color:var(--sub); font-size:12px; }
+  .dots i{ display:inline-block; width:5px; height:5px; margin-right:3px; border-radius:50%; background:var(--sub);
+           animation:blink 1.2s infinite; } .dots i:nth-child(2){animation-delay:.2s} .dots i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{ 0%,60%,100%{opacity:.25} 30%{opacity:1} }
+  .hotline{ background:#fff; border:1.5px solid var(--danger); border-radius:14px; padding:12px 14px;
+            font-size:12.5px; line-height:1.9; }
+  .hotline b{ color:var(--danger); }
+  .finishrow{ text-align:center; margin:4px 0; }
+  .finishbtn{ border:none; border-radius:9999px; padding:11px 22px; font-size:13px; font-weight:800; cursor:pointer;
+              color:#fff; background:var(--navy); }
+
+  /* ============ ドック ============ */
+  footer{ position:sticky; bottom:0; z-index:10; background:rgba(255,255,255,.95); backdrop-filter:blur(10px);
+          border-top:1px solid var(--line); padding:8px 12px calc(8px + env(safe-area-inset-bottom)); }
+  .chips{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+  .chips::-webkit-scrollbar{ display:none; }
+  .chip{ flex:none; border:1px solid var(--line); background:#fff; color:var(--sub); border-radius:9999px;
+         padding:5px 12px; font-size:11.5px; cursor:pointer; }
+  .chip.warn{ color:var(--danger); border-color:#f0c1c1; }
+  .chip.togon{ color:var(--navy); border-color:var(--navy); background:var(--card2); font-weight:700; }
+  .dockrow{ display:flex; gap:8px; align-items:flex-end; }
+  #reply{ flex:1; border:1px solid var(--line); background:#fff; color:var(--txt); border-radius:16px;
+          padding:10px 14px; font-family:inherit; font-size:14px; line-height:1.6; resize:none; max-height:110px; outline:none; }
+  #send{ width:44px; height:44px; border-radius:50%; border:none; font-size:17px; cursor:pointer; flex:none;
+         color:#fff; background:var(--navy); }
+  #send:disabled{ opacity:.35; }
+  #mic2{ width:44px; height:44px; border-radius:50%; border:1px solid var(--line); background:#fff;
+         font-size:17px; cursor:pointer; color:var(--txt); flex:none; }
+  #mic2.rec{ background:var(--danger); border-color:var(--danger); animation:pulse 1.2s infinite; }
+
+  /* ============ AI立入禁止ゾーン ============ */
+  .zone{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:18px 16px;
+         box-shadow:0 2px 12px rgba(27,42,94,.06); }
+  .backbtn{ border:1px solid var(--line); background:#fff; color:var(--navy); border-radius:9999px;
+            padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; margin-bottom:12px; }
+  .zreview{ background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:14px; }
+  .zreview h4{ margin:0 0 4px; font-size:12px; color:var(--navy); }
+  .zreview .grp{ margin-top:8px; }
+  .zreview .glabel{ font-size:11px; font-weight:800; color:var(--sub); margin-bottom:4px; }
+  .zreview .mk{ font-size:12px; line-height:1.65; margin:5px 0; padding:6px 10px; border-radius:9px;
+                background:#fff; border-left:3px solid var(--line); }
+  .zreview .mk b{ font-weight:800; }
+  .zreview .none{ font-size:11.5px; color:var(--sub); line-height:1.8; }
+  .zone .zh{ text-align:center; font-weight:800; font-size:15px; letter-spacing:.06em; color:var(--navy); }
+  .zone .zh small{ display:block; font-weight:400; font-size:11.5px; color:var(--sub); margin-top:6px; line-height:1.9; }
+  .zfield{ margin-top:14px; }
+  .zfield label{ display:block; font-size:12px; font-weight:700; margin-bottom:5px; }
+  .zfield label small{ color:var(--sub); font-weight:400; }
+  .zfield input,.zfield textarea{ width:100%; border:1px solid var(--line); background:#fafbfe; color:var(--txt);
+        border-radius:10px; padding:9px 12px; font-family:inherit; font-size:13.5px; line-height:1.7; outline:none; }
+  .zfield textarea{ resize:none; min-height:64px; }
+  .zfield.main textarea{ min-height:84px; border:1.5px solid var(--navy); background:#fff; }
+  .zactions{ display:flex; gap:8px; margin-top:16px; }
+  .zbtn{ flex:1; border:none; border-radius:9999px; padding:12px 0; font-size:13px; font-weight:800; cursor:pointer;
+         color:#fff; background:var(--navy); }
+  .zbtn.ghost{ background:var(--card2); color:var(--sub); border:1px solid var(--line); font-weight:400; }
+  .zdone{ text-align:center; padding:10px 0; }
+  .zdone .line{ font-size:16px; font-weight:700; line-height:2; margin:14px 0; padding:14px;
+        border-radius:14px; background:var(--card2); }
+  .zdone .note{ font-size:11.5px; color:var(--sub); line-height:1.9; }
+
+  /* ============ 履歴・レポート ============ */
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px;
+         box-shadow:0 1px 6px rgba(27,42,94,.04); }
+  .card h3{ margin:0 0 8px; font-size:13px; color:var(--navy); }
+  .hcard{ cursor:pointer; }
+  .hcard .hd{ display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--sub); gap:8px; }
+  .hcard .hd-right{ display:flex; align-items:center; gap:8px; flex:none; }
+  .hcard .hbadge{ font-size:11px; color:var(--sub); }
+  .hcard .hdel{ border:1px solid var(--line); background:#fff; border-radius:8px; padding:2px 7px; font-size:12px;
+                cursor:pointer; line-height:1.4; }
+  .hcard .hdel:hover{ border-color:var(--danger); }
+  .hcard .pv{ font-size:13px; margin-top:5px; line-height:1.6; }
+  .hcard .fl{ font-size:12px; margin-top:6px; padding:7px 10px; border-radius:9px; background:var(--card2); line-height:1.7; }
+  .hfull{ margin-top:10px; border-top:1px solid var(--line); padding-top:10px; display:flex; flex-direction:column; gap:8px; }
+  .hfull .u{ align-self:flex-end; max-width:85%; background:var(--user); color:#fff; padding:6px 10px; border-radius:12px; font-size:12px; line-height:1.6; }
+  .hfull .c{ font-size:12px; line-height:1.7; } .hfull .c b{ font-size:11px; }
+  .bar{ height:8px; border-radius:9999px; background:var(--card2); overflow:hidden; margin-top:3px; }
+  .bar i{ display:block; height:100%; border-radius:9999px; background:linear-gradient(90deg,#5a6acf,#7c6bd6); }
+  .axrow{ margin-top:9px; } .axrow .axl{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--sub); }
+  .empty{ text-align:center; color:var(--sub); font-size:12.5px; margin-top:30px; line-height:2; }
+  .kv{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .kv span{ font-size:11.5px; background:var(--card2); border-radius:9999px; padding:4px 11px; color:var(--sub); }
+  .kv span b{ color:var(--txt); }
+  .radarw{ display:flex; justify-content:center; padding:4px 0 0; }
+  .rank{ display:flex; gap:8px; margin-top:6px; }
+  .rk{ flex:1; text-align:center; background:var(--card2); border-radius:12px; padding:8px 4px; }
+  .rk .rava{ width:38px; height:38px; border-radius:50%; display:grid; place-items:center; font-size:18px;
+             margin:0 auto 4px; color:#fff; overflow:hidden; }
+  .rk .rava img{ width:100%; height:100%; object-fit:cover; }
+  .rk .rn{ font-size:11px; font-weight:800; }
+  .rk .rp{ font-size:10px; color:var(--sub); }
+  .memo{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .memo span{ font-size:11px; border:1px solid var(--line); border-radius:9999px; padding:4px 10px; background:#fff; }
+  .danger-btn{ width:100%; margin-top:10px; border:1px solid #f0c1c1; background:#fff; color:var(--danger);
+               border-radius:12px; padding:10px; font-size:12px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<header>
+  <div class="hrow">
+    <span class="logo">PRISM<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><defs><linearGradient id="gem1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ec5ff"/><stop offset=".4" stop-color="#c9a7f5"/><stop offset=".7" stop-color="#ffb199"/><stop offset="1" stop-color="#9ae6c9"/></linearGradient></defs><path d="M12 1 L22 9 L12 23 L2 9 Z" fill="url(#gem1)" stroke="#1b2a5e" stroke-width="1"/></svg></span>
+    <span class="badge" id="ai-badge"></span>
+    <button id="new-chat">＋ 新しい相談</button>
+  </div>
+  <div class="stepper hide" id="stepper">
+    <div class="step" data-s="1"><b>SESSION 1</b>話の輪郭を崩す</div>
+    <div class="step" data-s="2"><b>SESSION 2</b>異なる立場をぶつける</div>
+    <div class="step" data-s="3"><b>SESSION 3</b>本人の輪郭を映す</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-t="talk">相談する</div>
+    <div class="tab" data-t="history">履歴</div>
+    <div class="tab" data-t="report">思考レポート</div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- 入口 -->
+  <section id="view-intro">
+    <div class="hero">
+      <div class="big">PRISM<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><defs><linearGradient id="gem2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ec5ff"/><stop offset=".4" stop-color="#c9a7f5"/><stop offset=".7" stop-color="#ffb199"/><stop offset="1" stop-color="#9ae6c9"/></linearGradient></defs><path d="M12 1 L22 9 L12 23 L2 9 Z" fill="url(#gem2)" stroke="#1b2a5e" stroke-width="1"/></svg></div>
+      <div class="copy">答えをくれない。<br>だから、自分で考えはじめる。</div>
+      <div class="sub">ひとりで考えなくていい。でも、AIにも決めさせない。</div>
+    </div>
+    <div class="flowsteps">
+      <div class="fstep"><i>1</i>音声で吐露</div>
+      <div class="fstep"><i>2</i>3つのセッション</div>
+      <div class="fstep"><i>3</i>4人の偏ったAIが議論</div>
+      <div class="fstep"><i>4</i>AIは結論を出さない</div>
+      <div class="fstep"><i>5</i>メタ認知レポート</div>
+    </div>
+    <div class="sect">今日は誰と話す？</div>
+    <div class="cs-wrap">
+      <button class="cs-arrow prev" id="cs-prev" type="button" aria-label="前へ">‹</button>
+      <div class="cs-scroll" id="cs-scroll"></div>
+      <button class="cs-arrow next" id="cs-next" type="button" aria-label="次へ">›</button>
+    </div>
+    <div class="cs-dots" id="cs-dots"></div>
+    <div id="cs-note"></div>
+    <div class="sect">どのくらい踏み込んでほしい？</div>
+    <div class="intens" id="intens"></div>
+    <div class="sect">悩みを話す</div>
+    <div class="voicebox">
+      <textarea id="intake" placeholder="（例）最近、友達と一緒にいても楽しくない。でも自分から離れたら、一人になりそうで怖い……"></textarea>
+      <div class="vrow">
+        <button class="micbtn" id="mic1" title="音声で話す">🎤</button>
+        <button class="gobtn" id="go" disabled>4人に話してみる</button>
+      </div>
+    </div>
+    <div class="vnote">うまくまとめなくて大丈夫。話が飛んでも、途中で止まっても、そのまま話してください。<br>ここでの相談は端末の中だけに保存されます。</div>
+    <div class="values">
+      <div class="val"><span>🗣</span>うまく話せなくても始められる</div>
+      <div class="val"><span>⚖️</span>前提を決めつけない</div>
+      <div class="val"><span>🛡</span>本人の思考を上書きしない</div>
+    </div>
+  </section>
+
+  <!-- チャット -->
+  <section id="view-chat" class="hide" style="display:flex; flex-direction:column; gap:10px;"></section>
+
+  <!-- AI立入禁止ゾーン -->
+  <section id="view-final" class="hide">
+    <div class="zone">
+      <button class="backbtn" id="z-back">← 会話に戻って見返す</button>
+      <div class="zh">🚫 ここから先は、AI立入禁止ゾーン
+        <small>4人の話を聞いた今、あなたの中に残っているものは何ですか？<br>答えでなくても、疑問や違和感のままで大丈夫です。<br>ここから先の言葉は、AIは一文字も書きません。</small>
+      </div>
+      <div class="zreview" id="z-review"></div>
+      <div class="zfield"><label>一番引っかかった言葉</label><input id="z-hook" placeholder="誰かのセリフでも、自分の言葉でも"></div>
+      <div class="zfield"><label>一番反発した意見 <small>（誰の・どんな意見？）</small></label><input id="z-push" placeholder="例：KUROの「守ってるだけ」という見方"></div>
+      <div class="zfield"><label>少し納得した意見</label><input id="z-ok" placeholder="例：MIKAの……"></div>
+      <div class="zfield"><label>まだ決めきれないこと</label><input id="z-undec" placeholder="決めなくていいこと、そのまま書いてOK"></div>
+      <div class="zfield main"><label>今の自分の一文 <small>（誰かに見せるためではなく、自分に向けて）</small></label>
+        <textarea id="z-line" placeholder="答えじゃなくていい。今の時点で、嘘ではないと言える一文を。"></textarea>
+      </div>
+      <div class="zactions">
+        <button class="zbtn ghost" id="z-skip">今日は「まだ決めない」を選ぶ</button>
+        <button class="zbtn" id="z-save">この言葉を残して終わる</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 終了画面 -->
+  <section id="view-done" class="hide">
+    <div class="zone zdone">
+      <div class="zh">今日、あなたに残った言葉</div>
+      <div class="line" id="done-line"></div>
+      <div class="note" id="done-note">結論が出たかどうかは、今日の成果ではありません。<br>考えるべき問いが自分の言葉になったこと。それが今日の成果です。<br>この続きを、AIは書きません。</div>
+      <div class="zactions">
+        <button class="zbtn ghost" id="done-report">思考レポートを見る</button>
+        <button class="zbtn" id="done-new">＋ 新しい相談</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 履歴 -->
+  <section id="view-history" class="hide" style="display:flex; flex-direction:column; gap:10px;"></section>
+
+  <!-- レポート -->
+  <section id="view-report" class="hide" style="display:flex; flex-direction:column; gap:10px;"></section>
+
+</main>
+
+<footer id="dock" class="hide">
+  <div class="chips" id="chips"></div>
+  <div class="dockrow">
+    <button id="mic2" title="音声で話す">🎤</button>
+    <textarea id="reply" rows="1" placeholder="思ったことをそのまま…"></textarea>
+    <button id="send" disabled>➤</button>
+  </div>
+</footer>
+
+</div>
+<script>
+"use strict";
+/* ============================================================
+   PRISM — AI思考支援サービス（最終企画書準拠のブラウザdemo）
+   - 答えを出さない。4人の偏ったAIとの対話で本人の思考を引き出す。
+   - ローカルの server.js があれば本物AI（Gemini/Claude）、無ければ
+     オフラインエンジンに自動フォールバック（GitHub Pages対応）。
+   - 会話・反応・最後の一文は localStorage(prism_log_v1) に保存。
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const LOG_KEY = "prism_log_v1";
+
+/* ---------- 4キャラクター（クリティカル/肯定 × 陽/陰）
+   img にパス（例 img/kuro.png）を入れるとカード画像とチャットアイコンが差し替わる ---------- */
+const CHARS = {
+  "KURO": { emoji:"🌑", color:"var(--kuro)", grad:"linear-gradient(160deg,#4a5064,#22252f)", img:null,
+            axis:"クリティカル×陰", role:"鋭い皮肉家の現実主義者",
+            desc:"きれいな言葉を簡単には信じない。あなたが避けている現実を、静かに指摘する。",
+            line:"それ、思い込みを正当化してない？現実、甘くないよ。" },
+  "RAY":  { emoji:"⚡", color:"var(--ray)", grad:"linear-gradient(160deg,#ffb36b,#ee6a1f)", img:null,
+            axis:"クリティカル×陽", role:"エネルギッシュな挑発家",
+            desc:"明るいテンションで前提をひっくり返す。「それ、本当に悩むこと？」",
+            line:"それって本当にやりたいこと？刺激、足りてる？" },
+  "MIKA": { emoji:"🔥", color:"var(--mika)", grad:"linear-gradient(160deg,#4fd0bd,#0f8478)", img:null,
+            axis:"肯定×陽", role:"熱量の高い応援者",
+            desc:"あなたの可能性と本当の望みを問う。小さくまとまるのを許さない。",
+            line:"あなたのままですごいよ！可能性、いっぱいあるよ！" },
+  "YUI":  { emoji:"🌙", color:"var(--yui)", grad:"linear-gradient(160deg,#a89af0,#6a58c8)", img:null,
+            axis:"肯定×陰", role:"静かなメガネの図書委員系",
+            desc:"言葉にならない気持ちを、急かさずに待つ。「まだ決めない」も認める。",
+            line:"焦らなくていいよ。ちゃんと考えてること、伝わるよ。" },
+};
+const NAMES = Object.keys(CHARS);
+
+const SESSIONS = {
+  1:{ name:"話の輪郭を崩す",     hint:"最初の説明を、そのまま正解にしない" },
+  2:{ name:"異なる立場をぶつける", hint:"4人の意見が割れる。誰に反発する？" },
+  3:{ name:"本人の輪郭を映す",   hint:"結論ではなく、あなたの変化を返す" },
+};
+
+const INTENSITIES = [
+  { key:"soft", label:"軽く揺さぶって", sub:"論点と質問を絞る" },
+  { key:"std",  label:"ちゃんと議論したい", sub:"標準の4人ディスカッション" },
+  { key:"hard", label:"遠慮なく来て", sub:"厳しい反論・前提への問いを増やす" },
+];
+
+const HOTLINES = `<b>ひとりで抱えないでほしい話だと感じました。</b><br>
+いつもの4人の議論はいったん止めます。信頼できる大人や、下の窓口に話してみてください。<br>
+・24時間子供SOSダイヤル <b>0120-0-78310</b>（24時間）<br>
+・チャイルドライン <b>0120-99-7777</b>（16〜21時）<br>
+・よりそいホットライン <b>0120-279-338</b>（24時間）`;
+const CRISIS_RE = /(死にたい|消えたい|自殺|自傷|リスカ|リストカット|オーバードーズ|OD(した|しそう)|殴られ|蹴られ|虐待|いじめられて|性被害|痴漢|盗撮|殺したい|殺される)/;
+
+/* ============================================================
+   オフラインエンジン（サーバー無し環境用の簡易ディスカッション）
+   {q} はユーザー発言からの引用に置換される
+   ============================================================ */
+const OFF = {
+  1: {
+    KURO: [
+      "「{q}」…か。ずいぶんまとまった説明だな。まとまりすぎてて、逆に何かを避けてる気がする。",
+      "今の話、実際に起きたことと「そう感じただけのこと」が混ざってる。俺はまだどっちがどっちか分からない。",
+      "その言葉、便利すぎないか。便利な言葉は、本音を隠すのにも使えるからな。",
+    ],
+    RAY: [
+      "ねぇ、気づいてた？今の話、主語がほとんど相手だったよ。あなた自身はどこにいるの？",
+      "「{q}」って言ったけど、それが問題だって誰が決めたの？そこから疑ってもよくない？",
+      "面白いね。同じ言葉が2回出てきた。無意識に繰り返す言葉って、たいてい重要なんだよね。",
+    ],
+    MIKA: [
+      "まず言わせて。そこまで言葉を探しながら話すってことは、どうでもいい話じゃないんだよ。それは確かだと思う！",
+      "「{q}」のところ、声のトーンが変わった気がした。そこが本丸じゃない？",
+    ],
+    YUI: [
+      "……「{q}」のあたり、少し言葉を探してたように聞こえた。そこに何かある気がする。",
+      "急いでまとめなくていいよ。散らかったままの方が、本当のことが残ってると思う。",
+    ],
+    Q: [
+      "今の説明の中で、「実際に起きたこと」と「あなたがそう感じたこと」を分けるなら、どこで分かれる？",
+      "一番説明しにくかった部分を、きれいにまとめずにもう一度話すとしたら、何と言う？",
+      "その言葉、あなたにとって具体的にはどんな状態のこと？",
+      "相手の気持ちについて、確かに分かっていることと、まだ想像にすぎないことはどれ？",
+    ],
+  },
+  2: {
+    KURO: [
+      "はっきり言う。それは相手のためじゃなくて、嫌われたくない自分を守ってるだけの可能性がある。俺にはそう見える。",
+      "選ばない、っていうのも選択だからな。今のまま待つことで失ってるものから目を逸らしてないか。",
+      "「仕方ない」で片づけようとしてる部分にこそ、本音が埋まってると思うけどな。",
+    ],
+    RAY: [
+      "KUROは厳しいねぇ。でもさ、そもそも「うまくやらなきゃいけない」って前提、一回ひっくり返してみない？失敗したら何がそんなにまずいの？",
+      "じゃあ極端な話。誰にも褒められず、誰にも責められない世界だったら、あなたどうする？",
+      "3か月後のあなたがこの場面を見てたら、たぶん今と違うところを気にしてると思うんだよね。",
+    ],
+    MIKA: [
+      "KUROの言い方には反対。きっかけが不安でも、大切にしたい気持ちまで偽物とは限らないでしょ。動機がきれいじゃないだけで、全部を疑わなくていい。",
+      "私はむしろ、諦めようとしてる方が気になる。本当はどうなりたいの？そこを先に聞きたい。",
+    ],
+    YUI: [
+      "……二人の言うことは、両方ありえると思う。今は、どっちが正しいかより、あなたがどっちに反発したかの方が大事な気がする。",
+      "無理に選ばなくてもいい。ただ、何を守りたくてこんなに迷うのかは、知りたい。",
+    ],
+    Q: [
+      "4人の中で、一番「それは違う」と言いたくなったのは誰？その人は、あなたの何を誤解してる？",
+      "「関係を守ること」と「自分を偽らないこと」の両方を守れないとしたら、今はどちらを失うほうが怖い？",
+      "腹が立った意見の中に1%だけ事実があるとしたら、どの部分？",
+      "結果がどうなっても「自分で決めた」と思えるのは、どんな選び方？",
+    ],
+  },
+  3: {
+    KURO: [
+      "最初の説明と今とで、使ってる言葉が変わってきてるな。俺はそれ自体が答えの一部だと思う。",
+      "結論を出せとは言わない。ただ、今日目を逸らさなかったことは覚えておいた方がいい。",
+    ],
+    RAY: [
+      "今日のあなた、誰かの意見にぐっと反応した瞬間があったよね。あそこに本音が透けてた気がするなぁ。",
+      "最初より、分からないことが増えたでしょ？それ、後退じゃなくて解像度が上がったってことだからね。",
+    ],
+    MIKA: [
+      "結論はまだなくていい。でも「自分が何を守りたいか」は、最初よりはっきりしてきたんじゃない？",
+      "ここまで考え続けたこと自体が、もう行動だと私は思う。",
+    ],
+    YUI: [
+      "……ここから先は、私たちの言葉じゃなくて、あなたの言葉の番だと思う。",
+      "まだ答えを出したくないようにも見える。今は、それでもいいんじゃないかな。",
+    ],
+    Q: [
+      "今日の話の中で、あなたが一番守ろうとしていたものは何だったと思う？",
+      "無理に答えを出さずに持ち帰るとしたら、どんな問いを持ち帰りたい？",
+      "4人の言葉を使わずに、今のあなたの言葉だけで一文を残すなら？",
+    ],
+  },
+};
+// 「分からない」への返し（分からないを有効な回答として扱う）
+const OFF_UNSURE = [
+  ["YUI","……「分からない」って言えるのは、ちゃんと考えてる証拠だと思う。分からないまま、もう少しだけ一緒に居よう。"],
+  ["RAY","お、正直でいいね。じゃあ質問を変えよう。答えやすいやつにするからさ。"],
+  ["MIKA","分からなくて当然だよ、簡単な話じゃないもん。じゃあ感覚だけでいい、なんとなくでも。"],
+];
+
+/* ============================================================
+   本物AIモード（server.js経由 / Gemini・Claude）
+   ============================================================ */
+const AI = { enabled:false, model:"", provider:"" };
+function updateAiBadge(){
+  const on = (S && S.ai !== undefined) ? S.ai : AI.enabled;
+  const pname = AI.provider==="gemini" ? "Gemini" : "Claude";
+  $("#ai-badge").textContent = on ? `・AI稼働中（${pname}）` : "・オフラインdemo";
+}
+(async function checkAi(){
+  try{
+    if(new URLSearchParams(location.search).has("offline")) throw 0;
+    const r = await fetch("/api/health");
+    const d = await r.json();
+    AI.enabled = !!d.ai;
+    if(d.model) AI.model = d.model;
+    if(d.provider) AI.provider = d.provider;
+  }catch(_){ AI.enabled = false; }
+  updateAiBadge();
+})();
+
+/* 第10章のマスタープロンプト（非表示ディレクター）をシステムプロンプト化 */
+function buildSystemPrompt(intensity, solo){
+  const intens = intensity==="soft"
+    ? "対話強度は「軽く揺さぶって」。論点と質問を絞り、1ターンの発言者は2人程度。厳しい指摘は控えめに。"
+    : intensity==="hard"
+    ? "対話強度は「遠慮なく来て」。厳しい反論や前提への問いを増やしてよい。ただし人格攻撃とは峻別する。"
+    : "対話強度は標準。4人のバランスの取れたディスカッション。";
+  const soloRule = solo
+    ? `\n\n【1対1モード】\n今回はユーザーの希望で「${solo}」との1対1モード。discussion には ${solo} だけを登場させ（1ターンに1〜2発言）、他の3人は一切登場させない。reply_to は常に空文字。${solo}の価値観・口調を維持したまま、上記の原則・問いのルール・3セッション進行にそのまま従う。1対1でも結論や助言の押し付けはしない。`
+    : "";
+  return `あなたは、思考支援AIサービス「PRISM」の会話ディレクターです。
+PRISMの目的は、ユーザーの悩みを解決することではありません。異なる価値観を持つ4人との対話を通して、ユーザー自身の前提、反発、矛盾、恐れ、守りたい価値を表面化させることです。想定ユーザーは高校生です。
+
+【最重要原則】
+- 結論を出さない
+- 最適解を提示しない
+- アクションプランを決定しない
+- 完成した返信文や意見文を代筆しない
+- 4人の意見を中立的に統合しない
+- ユーザーより先に本人の気持ちを断定しない
+- 最後の一文をAIが書かない
+
+【キャラクター】
+KURO：クリティカル×陰。偏屈なリアリスト。本人が避けている現実、言い訳、自己欺瞞、選択の代償を見る。冷静で皮肉がある。努力・友情・夢などのきれいな言葉を簡単には信じない。本人を攻撃するのではなく、思考の逃げ道を減らす。嘘をついていると断定せず「別の見方をすると」「もしそうだとしたら」という仮説として提示する。一人称は「俺」。口調は低温で端的。
+RAY：クリティカル×陽。明るく挑発する批評家。明るいテンションで前提をひっくり返す。大胆な例え、極端な仮定、時間軸の変更、第三者視点を使う。否定的な内容でも会話を暗くしすぎない。目立つ言い回しだけで内容を空虚にしない。
+MIKA：肯定×陽。熱量の高い応援者。本人の可能性・欲望・行動したい気持ちを肯定し、小さくまとまることへ反論する。単純な「頑張れ」では終わらず、本人の望みを問う。何でも「大丈夫」と肯定しない。失敗を避けるために望みまで諦めている可能性を扱う。
+YUI：肯定×陰。静かな共感者。眼鏡の図書委員系。言葉にならない感情、迷い、沈黙、まだ決めたくない気持ちを静かに扱う。強く励まさず、小さな感情を拾う。発言や質問を必要以上に増やさない。「まだ分からない」を解決すべき失敗ではなく有効な状態として扱う。「……」から話し始めることがある。
+
+【キャラクター共通ルール】
+- キャラクターごとの価値観を維持する
+- 全員を同じ結論へ向かわせない。最低2人は異なる立場を取る
+- ユーザーの発言の固有の言葉を根拠として引用する。一般論だけの発言は禁止
+- 推測は仮説として表現する（is_hypothesis=true）
+- 人格否定、侮辱、差別、容姿攻撃を行わない。厳しさと攻撃性を混同しない
+- 全員が同じ内容を口調だけ変えて繰り返さない
+- 1発言は2〜3文の自然な話し言葉。硬い作文・長い説教は禁止
+- ${intens}
+
+【キャラ同士の議論を“長くラリーさせる”（最重要・最優先）】
+これはユーザーへの回答集ではなく、4人が繰り広げる議論の“観戦”です。だから discussion を1人1回ずつのリレーで終わらせては絶対にいけない。同じ相手と何度も言い合わせること。
+- 1ターンの discussion は【6〜10発言】。1キャラが1回だけ喋って終わりは禁止。
+- **必ず往復させる**：AがBに反論 → Bは黙らずAへ言い返す → AがさらにBへ再反論、というように、同じ2人が2〜3回ラリー（往復）する。そこへ別のキャラが横から割って入り、また別の往復が生まれる。
+- やり取りのイメージ（順番と reply_to の例）：
+  1. KURO（reply_to空・口火）
+  2. MIKA → KURO に反論
+  3. KURO → MIKA に再反論（黙らない）
+  4. RAY → KURO に便乗しつつ別角度
+  5. MIKA → RAY に反論
+  6. YUI → 全体を受けて静かに一言
+  （↑これはあくまで型。中身は毎回その相談に即して変える）
+- 各発言は2〜3文。ただし1回で語り尽くさず、相手の発言を受けて言い足す“打ち合い”で会話量を増やす。
+- reply_to には受けて話している相手の名前を必ず入れる（口火・ユーザーへの発言のみ空文字）。
+- 全員を同じ結論へ寄せない。むしろ対立を長引かせる。議論が十分に盛り上がってから、最後にユーザーへ問いを1つだけ返す。
+
+【声の会話らしい“温度感”を出す】
+ユーザーは文字ではなく“声”で話している。だから4人も、原稿を読むような硬い文章ではなく、実際に隣で喋っているような自然な話し言葉で返すこと。
+- 相づち・呼びかけ・言いよどみ・感情のこもった語尾など、生の会話のリズムを入れてよい（例：「えっと」「うーん」「〜じゃん？」「〜なんだよな」「ねぇ」「いやいや」）。ただしキャラごとの口調・一人称は保つ。
+- 冷たい正論の羅列ではなく、相手（ユーザーや他キャラ）に本気で向き合っている“熱”をにじませる。突き放さず、でも媚びない。
+- ただし長い説教・作文は禁止。2〜3文で、あくまで“話すように”。
+
+【問いのルール】
+- 1ターンにユーザーへ投げる中心質問は user_question の1つだけ。キャラクターの発言(text)は原則疑問文で終わらせない
+- 質問の中に望ましい答えを埋め込まない。断定的な誘導を避ける
+- Yes/Noだけで終わらない問いを優先する
+- 「分からない」「答えたくない」を有効な回答として認める
+- 同じ問いを表現だけ変えて繰り返さない
+- ユーザーが「わからない」「言語化できない」様子の時は、質問を重ねず、①2〜3個の選択肢から一言で選べる形にする ②こちらが仮の言葉を当てる、のどちらかにする
+
+【音声情報】
+- 沈黙、言い直し、話す速度から感情を断定しない
+- 音声上の特徴は確認質問の手がかりとしてのみ使い、「言葉を探していたように聞こえた」と観察として表現する
+
+【3セッション】
+SESSION 1「話の輪郭を崩す」：最初の説明を完成した問題設定として扱わない。曖昧な言葉、事実と解釈の混在、言い直し、繰り返し、未確認の前提を扱う。終了条件（2つ以上でready）：AIの読み取りを訂正した／事実と解釈の違いが見つかった／説明しきれない感情が見つかった／新しい前提が見つかった／中心論点が明確になった。
+SESSION 2「異なる立場をぶつける」：4人の価値観を衝突させ、両立しにくい2つ以上の価値を明確にする。反発、優先順位、判断基準を扱う。誰かへ誘導しない。終了条件（2つ以上でready）：キャラへ反論した／価値観の衝突が見えた／異なる見方を一つ認めた／「何を優先するか」が見えた／まだ決めたくない理由を言葉にした。
+SESSION 3「本人の輪郭を映す」：結論・助言・統合案を出さず、最初からの変化、強く反発した意見、少し認めた意見、守ろうとしていた価値の仮説、残った問いを鏡のように返す。性格を断定せず「今回の対話では〇〇を守ろうとしているように見えた」という仮説表現を使う。最後はユーザー自身の一文につながる問いを出す。回答例や完成文は作らない。
+
+【出力前の内部確認】
+4人の意見が重複していないか／実質的な対立があるか／ユーザーが話していない内容を事実にしていないか／質問が結論へ誘導していないか／AIが答えや行動を決めていないか／前回と同じ議論を繰り返していないか／ユーザーが反論できる余地があるか／現在のセッション目的に合っているか。満たさない場合は表示前に修正し、確認内容は出力しないこと。
+
+【安全】
+自傷・自殺・暴力・虐待・いじめ・性被害・犯罪被害・緊急性の高い危険のサインを感じたら crisis を true にし、通常の偏屈なディスカッションを止める。キャラクター性より安全を優先し、信頼できる大人・学校・相談窓口につながることを本気で勧める。
+
+【出力形式】
+- discussion：そのターンのキャラ同士の議論（6〜10発言の長いラリー）。1人1回ずつで終わらせず、同じ相手と往復（A→B→A→B）させながら互いに反論・再反論し合う応酬にする。同じキャラが複数回登場すること。characterは名前、textは2〜3文の自然な話し言葉（声で喋っているような温度感）、reply_toは受けて話している相手の名前（ユーザーへの発言や口火なら空文字）、is_hypothesisは推測を含むか。
+- user_question：ユーザーへの中心質問1つ。「聞くだけモード」の指示があるターンは text を空文字にする。allow_unknown/allow_skip は「分からない」「答えたくない」で返してよい質問なら true。
+- session_progress：現在セッションの終了条件を満たした数と、次セッションへ進んで良いかどうか。${soloRule}`;
+}
+
+const AI_REPLY_SCHEMA = {
+  type:"object",
+  properties:{
+    discussion:{ type:"array", items:{
+      type:"object",
+      properties:{
+        character:{ type:"string", enum:NAMES },
+        text:{ type:"string" },
+        reply_to:{ type:"string" },
+        is_hypothesis:{ type:"boolean" },
+      },
+      required:["character","text","reply_to","is_hypothesis"], additionalProperties:false,
+    }},
+    user_question:{ type:"object",
+      properties:{
+        text:{ type:"string" },
+        allow_unknown:{ type:"boolean" },
+        allow_skip:{ type:"boolean" },
+      },
+      required:["text","allow_unknown","allow_skip"], additionalProperties:false,
+    },
+    session_progress:{ type:"object",
+      properties:{
+        conditions_met:{ type:"integer" },
+        ready_for_next_session:{ type:"boolean" },
+      },
+      required:["conditions_met","ready_for_next_session"], additionalProperties:false,
+    },
+    crisis:{ type:"boolean" },
+  },
+  required:["discussion","user_question","session_progress","crisis"], additionalProperties:false,
+};
+
+async function aiChat(userContent, schema, maxTokens){
+  S.apiMessages.push({ role:"user", content:userContent });
+  const body = JSON.stringify({
+    model: AI.model,
+    max_tokens: maxTokens,
+    system: [{ type:"text", text:S.systemPrompt, cache_control:{ type:"ephemeral" } }],
+    output_config: { format:{ type:"json_schema", schema }, effort:"low" },
+    messages: S.apiMessages,
+  });
+  let lastErr;
+  for(let attempt=0; attempt<2; attempt++){
+    try{
+      const r = await fetch("/api/chat", { method:"POST", headers:{ "Content-Type":"application/json" }, body });
+      const data = await r.json();
+      if(data.error) throw new Error(data.error.message || "API error");
+      const text = ((data.content||[]).find(b=>b.type==="text")||{}).text || "";
+      if(!text.trim()) throw new Error("空の応答");
+      const parsed = JSON.parse(text);
+      S.apiMessages.push({ role:"assistant", content:text });
+      return parsed;
+    }catch(e){ lastErr = e; }
+  }
+  S.apiMessages.pop();
+  throw lastErr;
+}
+
+/* 毎ターンAIに渡す進行メモ（非表示ディレクターの状態） */
+function directorNote(){
+  const s = SESSIONS[S.sess];
+  const notes = [`現在SESSION ${S.sess}「${s.name}」（このセッションでのユーザー発言 ${S.turnInSess}回目）。`];
+  if(S.pendingReacts.length){
+    notes.push("ユーザーの反応記録: " + S.pendingReacts.join(" / ") + "（SESSION 3の鏡映しに使う。反発した意見をすぐ撤回しない）");
+    S.pendingReacts = [];
+  }
+  if(S.muted.size) notes.push(`ユーザーの希望により ${[...S.muted].join("・")} は発言させない。`);
+  if(S.listenOnly) notes.push("ユーザーは今「聞くだけ」を希望。user_question.text は空文字にし、議論だけを短く見せる。");
+  if(S.sess===3) notes.push("結論を出さず、変化・反発・守ろうとした価値を鏡のように返し、本人の一文につながる問いへ向かうこと。");
+  return `\n\n[進行メモ: ${notes.join(" ")}]`;
+}
+
+async function aiRound(userText){
+  const think = showThinking(S.solo ? `${S.solo}が考えています…` : "4人で話し合っています…");
+  let out;
+  try{ out = await aiChat(userText + directorNote(), AI_REPLY_SCHEMA, 4096); }
+  finally{ think.remove(); }
+  if(out.crisis) S.crisis = true;
+  for(const d of (out.discussion||[])){
+    if(S.solo) d.character = S.solo;   // 1対1では選んだ子以外の名前が返っても矯正する
+    if(!CHARS[d.character] || !d.text) continue;
+    if(S.muted.has(d.character)) continue;
+    await addCharLine(d.character, d.text, { replyTo:d.reply_to, hyp:d.is_hypothesis });
+  }
+  if(out.crisis){ crisisNotice(); return; }
+  const q = out.user_question || {};
+  if(q.text && !S.listenOnly) addQuestion(q.text, q.allow_unknown!==false, q.allow_skip!==false);
+  // セッション移行判定（ディレクター判定＋長引き防止のガード）
+  const ready = (out.session_progress && out.session_progress.ready_for_next_session) || S.turnInSess >= 4;
+  if(ready && S.sess < 3) advanceSession();
+  else if(S.sess===3 && S.turnInSess >= 1) showFinishRow();
+}
+
+/* ============================================================
+   共通UIヘルパー
+   ============================================================ */
+const thread = () => $("#view-chat");
+function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstChild; }
+function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+// 自動スクロールは無効化（メッセージが出るたびに画面が動かず、ユーザーが自分のペースで読める）
+function scrollEnd(){ /* no-op */ }
+function avaHtml(name){
+  const c = CHARS[name];
+  return c.img
+    ? `<span class="ava" style="border-color:${c.color}"><img src="${c.img}" alt="${name}"></span>`
+    : `<span class="ava" style="border-color:${c.color};background:${c.grad}">${c.emoji}</span>`;
+}
+function extractQuote(text){
+  const seg = (text||"").split(/[。！？!?\n]/).map(s=>s.trim()).filter(s=>s.length>=4);
+  if(!seg.length) return "その話";
+  const pick = seg[Math.floor(Math.random()*seg.length)];
+  return pick.length>18 ? pick.slice(0,18)+"…" : pick;
+}
+function pickFrom(pool, used){
+  const avail = pool.filter(x=>!used.has(x));
+  const p = avail.length ? avail[Math.floor(Math.random()*avail.length)] : pool[Math.floor(Math.random()*pool.length)];
+  used.add(p);
+  return p;
+}
+
+function showThinking(label){
+  const t = el(`<div class="typing"><span class="ava">💠</span><div class="dots"><i></i><i></i><i></i></div><span>${escapeHtml(label)}</span></div>`);
+  thread().appendChild(t); scrollEnd();
+  return t;
+}
+
+function addUser(text){
+  thread().appendChild(el(`<div class="user">${escapeHtml(text)}</div>`));
+  scrollEnd(); logMsg("user", null, text);
+}
+
+function addSessDiv(n){
+  const s = SESSIONS[n];
+  thread().appendChild(el(`<div class="sessdiv"><span>SESSION ${n}｜${s.name}</span><small>${escapeHtml(s.hint)}</small></div>`));
+  scrollEnd(); logMsg("div", null, `SESSION ${n}｜${s.name}`);
+}
+
+async function addCharLine(name, text, opt){
+  opt = opt || {};
+  const c = CHARS[name];
+  const rto = (opt.replyTo && CHARS[opt.replyTo] && opt.replyTo!==name) ? `<span class="rto">↩ ${opt.replyTo} へ</span>` : "";
+  const node = el(`<div class="cline">
+    ${avaHtml(name)}
+    <div class="cbody">
+      <div class="cname" style="color:${c.color}">${name}${rto}</div>
+      <div class="bub" style="border-left-color:${c.color}">${escapeHtml(text)}</div>
+      ${opt.hyp ? '<div class="hyp">※ 決めつけではなく、ひとつの見方として</div>' : ""}
+      <div class="reacts">
+        <button class="rbtn" data-k="hit">💡 刺さった</button>
+        <button class="rbtn" data-k="push">💥 反発した</button>
+      </div>
+    </div></div>`);
+  node.querySelectorAll(".rbtn").forEach(b=>{
+    b.onclick = ()=>{
+      if(b.classList.contains("on")) return;
+      b.classList.add("on");
+      bumpReact(name, b.dataset.k);
+      S.marks.push({ name, kind:b.dataset.k, text });   // AI立入禁止ゾーンで見返せるように保存
+      S.pendingReacts.push(`「${name}」の発言（${text.slice(0,24)}…）に${b.dataset.k==="hit"?"💡共感・刺さった":"💥反発した"}`);
+    };
+  });
+  thread().appendChild(node);
+  scrollEnd();
+  // 読む速度に合わせた演出ディレイ。文字数に比例させ、1つずつ心地よいテンポで表示する
+  // （AIモードが速すぎて目が回るというFB対応：固定300ms→文字数連動のゆったりした間合いに）
+  await new Promise(r=>setTimeout(r, (S.ai ? 620 : 560) + Math.min(text.length*28, 1150)));
+  logMsg("char", name, text);
+}
+
+function addQuestion(text, allowUnknown, allowSkip){
+  thread().appendChild(el(`<div class="qbub"><div class="qh">❓ 今日の中心の問い（答えは1つじゃなくていい）</div><div class="qt">${escapeHtml(text)}</div></div>`));
+  scrollEnd(); logMsg("q", null, text);
+  renderChips(allowUnknown, allowSkip);
+}
+
+function crisisNotice(){
+  if(S.crisisShown) return;
+  S.crisisShown = true;
+  thread().appendChild(el(`<div class="hotline">${HOTLINES}</div>`));
+  scrollEnd(); logMsg("div", null, "（相談窓口を案内）");
+}
+
+function showFinishRow(){
+  if($("#finish-row")) return;
+  const n = el(`<div class="finishrow" id="finish-row"><button class="finishbtn">✍ 自分の一文を書いて終える</button></div>`);
+  n.querySelector("button").onclick = openFinalZone;
+  thread().appendChild(n); scrollEnd();
+}
+
+function advanceSession(){
+  S.sess++; S.turnInSess = 0;
+  addSessDiv(S.sess);
+  renderStepper();
+  updateLastLog({ sessReached:S.sess });
+}
+
+function renderStepper(){
+  document.querySelectorAll(".step").forEach(st=>{
+    const n = +st.dataset.s;
+    st.classList.toggle("on", n===S.sess);
+    st.classList.toggle("done", n<S.sess);
+  });
+}
+
+/* ============================================================
+   オフラインラウンド
+   ============================================================ */
+async function offlineRound(userText, isFirst){
+  if(CRISIS_RE.test(userText)){
+    S.crisis = true;
+    await addCharLine(S.solo || "YUI", "……今の話は、ああだこうだ言うより先に、あなたの安全のほうが大事だと思った。", {});
+    crisisNotice();
+    return;
+  }
+  const pools = OFF[S.sess];
+  const q = extractQuote(userText);
+  const fill = s => s.replace(/\{q\}/g, q);
+  // 「分からない」系は受け止めてから軽い問いへ
+  if(!isFirst && /^(わから|分から|どうだろ|うーん|知らん|微妙|別に|答えたくない)/.test(userText.trim())){
+    const [nm, line] = OFF_UNSURE[S.offRound % OFF_UNSURE.length];
+    await addCharLine(S.solo || nm, line, {});
+    S.unknownCount++; updateLastLog({ unknown:S.unknownCount });
+  }
+  // 発言者選び：1対1なら選んだ子だけ。通常は「批判→肯定が反論→別視点が割って入る」の応酬を見せる
+  let speakers;
+  if(S.solo){
+    speakers = isFirst ? [{n:S.solo},{n:S.solo}] : [{n:S.solo}];
+  }else if(isFirst){
+    speakers = NAMES.filter(n=>!S.muted.has(n)).map(n=>({n}));
+  }else{
+    const critical = ["KURO","RAY"].filter(n=>!S.muted.has(n));
+    const positive = ["MIKA","YUI"].filter(n=>!S.muted.has(n));
+    const c1 = critical[S.offRound % Math.max(critical.length,1)];
+    const p1 = positive[S.offRound % Math.max(positive.length,1)];
+    const rest = critical.concat(positive).filter(n=>n!==c1 && n!==p1);
+    const x = rest.length ? rest[S.offRound % rest.length] : null;
+    const y = rest.length>1 ? rest[(S.offRound+1) % rest.length] : null;
+    // c1が口火 → p1がc1へ反論 → c1がp1へ言い返す → xが割って入る → yが受ける、の往復ラリー
+    speakers = [ c1&&{n:c1}, p1&&{n:p1, to:c1}, c1&&{n:c1, to:p1}, x&&{n:x, to:c1}, y&&{n:y, to:x} ].filter(Boolean);
+  }
+  if(!speakers.length) speakers = [{n:"YUI"}];
+  for(const sp of speakers){
+    await addCharLine(sp.n, fill(pickFrom(pools[sp.n], S.usedLines)), { hyp: sp.n==="KURO", replyTo: sp.to });
+  }
+  S.offRound++;
+  if(!S.listenOnly) addQuestion(pickFrom(pools.Q, S.usedQ), true, true);
+  // 各セッション2往復で次へ（オフラインの簡易進行）
+  if(S.turnInSess >= 2 && S.sess < 3) advanceSession();
+  else if(S.sess===3 && S.turnInSess >= 1) showFinishRow();
+}
+
+/* ============================================================
+   会話の状態と進行
+   ============================================================ */
+let S = null;
+let busy = false;
+
+function newState(){
+  return {
+    sess:1, turnInSess:0, ai:AI.enabled, solo:null,
+    apiMessages:[], systemPrompt:"",
+    intensity:"std", muted:new Set(), listenOnly:false,
+    crisis:false, crisisShown:false,
+    usedQ:new Set(), usedLines:new Set(), offRound:0,
+    pendingReacts:[], marks:[], unknownCount:0, aiFails:0,
+  };
+}
+
+async function startConsult(){
+  const text = $("#intake").value.trim();
+  if(!text || busy) return;
+  busy = true; $("#go").disabled = true;
+  stopRec();
+  S = newState();
+  S.intensity = currentIntensity;
+  S.solo = chatSel!=="team" ? chatSel : null;
+  pushLog({ t:Date.now(), preview:text.slice(0,60), intensity:S.intensity, ai:S.ai, solo:S.solo,
+            messages:[], reacts:{}, unknown:0, sessReached:1, final:null });
+  $("#view-intro").classList.add("hide");
+  $("#view-chat").classList.remove("hide");
+  $("#dock").classList.remove("hide");
+  $("#stepper").classList.remove("hide");
+  renderStepper(); updateAiBadge();
+  addSessDiv(1);
+  addUser(text);
+  S.turnInSess = 1;
+  const obs = obsSet.size ? [...obsSet].join("、") : "特になし";
+  if(S.ai){
+    S.systemPrompt = buildSystemPrompt(S.intensity, S.solo);
+    try{
+      await aiRound(`相談（音声の文字起こし。整っていなくてよい）：\n${text}\n\n音声上の観察：${obs}`);
+    }catch(e){
+      S.ai = false; updateAiBadge();
+      await offlineRound(text, true);
+    }
+  }else{
+    await offlineRound(text, true);
+  }
+  busy = false; setSendEnabled();
+}
+
+async function sendReply(text){
+  if(busy || !S) return;
+  busy = true; setSendEnabled();
+  stopRec();
+  addUser(text);
+  S.turnInSess++;
+  if(/分からない|わからない/.test(text)){ S.unknownCount++; updateLastLog({ unknown:S.unknownCount }); }
+  if(S.ai){
+    try{
+      await aiRound(text);
+      S.aiFails = 0;
+    }catch(e){
+      S.aiFails++;
+      if(S.aiFails >= 3){ S.ai = false; updateAiBadge(); }
+      await offlineRound(text, false);
+    }
+  }else{
+    await offlineRound(text, false);
+  }
+  busy = false; setSendEnabled();
+}
+
+/* ---------- ドックのチップ（分からない・答えたくない・設定） ---------- */
+function renderChips(allowUnknown, allowSkip){
+  const c = $("#chips"); c.innerHTML = "";
+  if(allowUnknown!==false){
+    const b = el(`<button class="chip">まだ分からない</button>`);
+    b.onclick = ()=>{ if(!busy) sendReply("まだ分からない。"); };
+    c.appendChild(b);
+  }
+  if(allowSkip!==false){
+    const b = el(`<button class="chip">この質問には答えたくない</button>`);
+    b.onclick = ()=>{ if(!busy) sendReply("この質問には答えたくない。"); };
+    c.appendChild(b);
+  }
+  const listen = el(`<button class="chip ${S&&S.listenOnly?"togon":""}">👂 ${S&&S.listenOnly?"聞くだけ中":"今は聞くだけ"}</button>`);
+  listen.onclick = ()=>{ S.listenOnly = !S.listenOnly; renderChips(allowUnknown, allowSkip); };
+  c.appendChild(listen);
+  if(!S || !S.solo){
+    for(const nm of NAMES){
+      const on = S && S.muted.has(nm);
+      const b = el(`<button class="chip ${on?"togon":""}">${CHARS[nm].emoji} ${nm}${on?"は休憩中":"に黙ってもらう"}</button>`);
+      b.onclick = ()=>{ on ? S.muted.delete(nm) : S.muted.add(nm); renderChips(allowUnknown, allowSkip); };
+      c.appendChild(b);
+    }
+  }
+  const fin = el(`<button class="chip warn">🏁 今日はここで終わる</button>`);
+  fin.onclick = openFinalZone;
+  c.appendChild(fin);
+}
+
+/* ============================================================
+   AI立入禁止ゾーン（最後はユーザーの言葉だけが残る）
+   ============================================================ */
+function openFinalZone(){
+  if(!S) return;
+  renderMarks();
+  $("#view-chat").classList.add("hide");
+  $("#dock").classList.add("hide");
+  $("#view-final").classList.remove("hide");
+  window.scrollTo(0,0);
+}
+// 会話に戻って見返す（禁止ゾーンから戻る。入力済みの内容は保持される）
+function backToChat(){
+  $("#view-final").classList.add("hide");
+  $("#view-chat").classList.remove("hide");
+  $("#dock").classList.remove("hide");
+  $("#stepper").classList.remove("hide");
+  window.scrollTo(0, document.body.scrollHeight);
+}
+// 💡刺さった／💥反発した で選んだ発言を、禁止ゾーン内で一覧表示（自分の印を見ながら一文を書ける）
+function renderMarks(){
+  const box = $("#z-review");
+  const marks = (S && S.marks) || [];
+  if(!marks.length){
+    box.innerHTML = `<div class="none">今回の会話では、まだ「💡刺さった」「💥反発した」に印をつけていません。<br>「← 会話に戻って見返す」から、気になった発言に印をつけると、ここに集まります。</div>`;
+    return;
+  }
+  const line = m => `<div class="mk" style="border-left-color:${CHARS[m.name]?CHARS[m.name].color:'var(--line)'}"><b style="color:${CHARS[m.name]?CHARS[m.name].color:''}">${m.name}</b>　${escapeHtml(m.text)}</div>`;
+  const push = marks.filter(m=>m.kind==="push");
+  const hit  = marks.filter(m=>m.kind==="hit");
+  box.innerHTML =
+    `<h4>あなたが印をつけた発言</h4>` +
+    (push.length ? `<div class="grp"><div class="glabel">💥 反発した</div>${push.map(line).join("")}</div>` : ``) +
+    (hit.length  ? `<div class="grp"><div class="glabel">💡 刺さった</div>${hit.map(line).join("")}</div>`  : ``);
+}
+function saveFinal(skipped){
+  const final = {
+    hooked: $("#z-hook").value.trim(),
+    pushback: $("#z-push").value.trim(),
+    accepted: $("#z-ok").value.trim(),
+    undecided: $("#z-undec").value.trim(),
+    line: skipped ? "" : $("#z-line").value.trim(),
+    decidedNotToDecide: !!skipped,
+  };
+  updateLastLog({ final });
+  $("#view-final").classList.add("hide");
+  $("#view-done").classList.remove("hide");
+  $("#done-line").textContent = final.line || "「今日は、まだ決めない」— それを自分で決めた。";
+  window.scrollTo(0,0);
+}
+
+/* ============================================================
+   ログ（localStorage）
+   ============================================================ */
+function readLog(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||"[]"); }catch(_){ return []; } }
+function writeLog(a){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(a)); }catch(_){} }
+function pushLog(e){ const a=readLog(); a.push(e); writeLog(a); }
+function updateLastLog(patch){ const a=readLog(); if(!a.length) return; Object.assign(a[a.length-1],patch); writeLog(a); }
+function logMsg(role,name,text){ const a=readLog(); if(!a.length) return; const e=a[a.length-1]; (e.messages=e.messages||[]).push({role,name,text}); writeLog(a); }
+function bumpReact(name,kind){ const a=readLog(); if(!a.length) return; const e=a[a.length-1];
+  e.reacts=e.reacts||{}; e.reacts[name]=e.reacts[name]||{hit:0,push:0}; e.reacts[name][kind]++; writeLog(a); }
+
+/* ============================================================
+   音声入力（Web Speech API）
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recTarget = null, recBase = "", lastResultAt = 0;
+function startRec(targetTa, btn){
+  if(!SR || rec) return;
+  rec = new SR();
+  rec.lang = "ja-JP"; rec.continuous = true; rec.interimResults = true;
+  recTarget = targetTa; recBase = targetTa.value ? targetTa.value + " " : "";
+  lastResultAt = Date.now();
+  rec.onresult = ev => {
+    let fin = "", interim = "";
+    for(let i=0;i<ev.results.length;i++){
+      const r = ev.results[i];
+      if(r.isFinal) fin += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    // 4秒以上の間があったら「観察」として記録（感情は断定しない）
+    if(S===null && Date.now()-lastResultAt > 4000) pendingObs("途中で長い間があった");
+    if(/違う|じゃなくて|というか|なんだろ/.test(fin)) pendingObs("言い直し・言葉を探す様子があった");
+    lastResultAt = Date.now();
+    recTarget.value = recBase + fin + interim;
+    recTarget.dispatchEvent(new Event("input"));
+  };
+  rec.onend = ()=>{ rec=null; document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec")); };
+  rec.onerror = ()=>{ try{rec&&rec.stop();}catch(_){} };
+  rec.start();
+  btn.classList.add("rec");
+}
+const obsSet = new Set();
+function pendingObs(s){ if(!obsSet.has(s)){ obsSet.add(s); } }
+function stopRec(){ if(rec){ try{rec.stop();}catch(_){} rec=null; }
+  document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec")); }
+function toggleRec(ta, btn){ rec ? stopRec() : startRec(ta, btn); }
+
+/* ============================================================
+   履歴タブ
+   ============================================================ */
+function buildHistory(){
+  const v = $("#view-history"); v.innerHTML = "";
+  const raw = readLog();
+  if(!raw.length){ v.innerHTML = `<div class="empty">まだ相談の記録がありません。<br>最初の相談をすると、ここに残ります。</div>`; return; }
+  // 元配列のインデックスを保持したまま新しい順に並べる（個別削除で正しい1件を消すため）
+  const log = raw.map((e,i)=>({e,i})).reverse();
+  for(const {e,i} of log){
+    const d = new Date(e.t);
+    const dt = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    const fl = e.final ? (e.final.line || "（「まだ決めない」を選んだ）") : "";
+    const card = el(`<div class="card hcard">
+      <div class="hd">
+        <span>${dt}・SESSION ${e.sessReached||1}まで${e.solo?`・${e.solo}と1対1`:""}</span>
+        <span class="hd-right"><span class="hbadge">${e.ai?"AI":"オフライン"}</span><button class="hdel" title="この相談を削除">🗑</button></span>
+      </div>
+      <div class="pv">${escapeHtml(e.preview||"")}…</div>
+      ${fl ? `<div class="fl">✍ ${escapeHtml(fl)}</div>` : ""}
+      <div class="hfull hide"></div></div>`);
+    card.onclick = ()=>{
+      const f = card.querySelector(".hfull");
+      if(!f.classList.contains("hide")){ f.classList.add("hide"); return; }
+      if(!f.innerHTML){
+        for(const m of (e.messages||[])){
+          if(m.role==="user") f.appendChild(el(`<div class="u">${escapeHtml(m.text)}</div>`));
+          else if(m.role==="char") f.appendChild(el(`<div class="c"><b style="color:${CHARS[m.name]?CHARS[m.name].color:"var(--sub)"}">${escapeHtml(m.name||"")}</b>　${escapeHtml(m.text)}</div>`));
+          else if(m.role==="q") f.appendChild(el(`<div class="c"><b>❓</b>　${escapeHtml(m.text)}</div>`));
+          else f.appendChild(el(`<div class="c" style="color:var(--sub)">— ${escapeHtml(m.text)} —</div>`));
+        }
+      }
+      f.classList.remove("hide");
+    };
+    // 個別削除（カード展開のクリックとは分離）
+    card.querySelector(".hdel").onclick = (ev)=>{
+      ev.stopPropagation();
+      if(confirm("この相談の記録を削除します。よろしいですか？")){
+        const a = readLog(); a.splice(i,1); writeLog(a); buildHistory();
+      }
+    };
+    v.appendChild(card);
+  }
+  const del = el(`<button class="danger-btn">記録をすべて消す（レポートのデータも消えます）</button>`);
+  del.onclick = ()=>{ if(confirm("すべての相談記録とレポートデータを削除します。よろしいですか？")){ localStorage.removeItem(LOG_KEY); buildHistory(); } };
+  v.appendChild(del);
+}
+
+/* ============================================================
+   メタ認知レポート（優劣ではなく「今の使い方」を映す鏡）
+   ============================================================ */
+function buildReport(){
+  const v = $("#view-report"); v.innerHTML = "";
+  const log = readLog();
+  if(!log.length){ v.innerHTML = `<div class="empty">まだデータがありません。<br>相談すると、あなたの「考え方のクセ」がここに映ります。</div>`; return; }
+
+  // 集計
+  const reacts = {}; NAMES.forEach(n=>reacts[n]={hit:0,push:0});
+  const said = {}; NAMES.forEach(n=>said[n]=0);
+  let unknown=0, finals=0, lines=0, undecided=0, fields=0, fieldsMax=0;
+  for(const e of log){
+    for(const n of NAMES){ if(e.reacts && e.reacts[n]){ reacts[n].hit+=e.reacts[n].hit||0; reacts[n].push+=e.reacts[n].push||0; } }
+    for(const m of (e.messages||[])){ if(m.role==="char" && said[m.name]!==undefined) said[m.name]++; }
+    unknown += e.unknown||0;
+    if(e.final){
+      finals++;
+      if(e.final.line) lines++;
+      if(e.final.decidedNotToDecide || e.final.undecided) undecided++;
+      fieldsMax += 5;
+      fields += ["hooked","pushback","accepted","undecided","line"].filter(k=>e.final[k]).length;
+    }
+  }
+  const totalHit = NAMES.reduce((s,n)=>s+reacts[n].hit,0);
+  const totalPush = NAMES.reduce((s,n)=>s+reacts[n].push,0);
+  const mostHit = NAMES.slice().sort((a,b)=>reacts[b].hit-reacts[a].hit)[0];
+  const mostPush = NAMES.slice().sort((a,b)=>reacts[b].push-reacts[a].push)[0];
+
+  v.appendChild(el(`<div class="card"><h3>📊 今週のあなた</h3>
+    <div class="kv">
+      <span>相談 <b>${log.length}</b>回</span>
+      <span>💡刺さった <b>${totalHit}</b></span>
+      <span>💥反発した <b>${totalPush}</b></span>
+      <span>「まだ分からない」<b>${unknown}</b>回</span>
+      <span>自分の一文 <b>${lines}</b>回</span>
+    </div></div>`));
+
+  // 視点バランスレーダー（上RAY／右MIKA／下YUI／左KURO のひし形）
+  const vals = {}; NAMES.forEach(n=> vals[n] = reacts[n].hit + reacts[n].push + (said[n]?1:0));
+  const vmax = Math.max(1, ...NAMES.map(n=>vals[n]));
+  const CX=130, CY=104, R=72, MIN=16;
+  const rOf = n => MIN + (vals[n]/vmax)*(R-MIN);
+  const poly = `${CX},${CY-rOf("RAY")} ${CX+rOf("MIKA")},${CY} ${CX},${CY+rOf("YUI")} ${CX-rOf("KURO")},${CY}`;
+  const rad = el(`<div class="card"><h3>💠 視点バランスレーダー</h3>
+    <div class="radarw"><svg viewBox="0 0 260 208" width="260" height="208">
+      <polygon points="${CX},${CY-R} ${CX+R},${CY} ${CX},${CY+R} ${CX-R},${CY}" fill="none" stroke="#e2e5f0" stroke-width="1.5"/>
+      <polygon points="${CX},${CY-R/2} ${CX+R/2},${CY} ${CX},${CY+R/2} ${CX-R/2},${CY}" fill="none" stroke="#edf0f8" stroke-width="1"/>
+      <line x1="${CX}" y1="${CY-R}" x2="${CX}" y2="${CY+R}" stroke="#edf0f8"/>
+      <line x1="${CX-R}" y1="${CY}" x2="${CX+R}" y2="${CY}" stroke="#edf0f8"/>
+      <polygon points="${poly}" fill="rgba(124,107,214,.20)" stroke="#7c6bd6" stroke-width="2"/>
+      <text x="${CX}" y="${CY-R-9}" text-anchor="middle" font-size="10" font-weight="700" fill="#f2762e">RAY（クリティカル×陽）</text>
+      <text x="${CX+R+4}" y="${CY+3}" text-anchor="start" font-size="10" font-weight="700" fill="#159889">MIKA</text>
+      <text x="${CX}" y="${CY+R+14}" text-anchor="middle" font-size="10" font-weight="700" fill="#7c6bd6">YUI（肯定×陰）</text>
+      <text x="${CX-R-4}" y="${CY+3}" text-anchor="end" font-size="10" font-weight="700" fill="#3d4152">KURO</text>
+    </svg></div>
+    <div class="hyp">どの視点とよく向き合ったか（💡＋💥）。かたよりも個性のうち。</div></div>`);
+  v.appendChild(rad);
+
+  // 今週よく出会ったAI（発言数ランキング）
+  const rank = NAMES.slice().sort((a,b)=>said[b]-said[a]);
+  const rk = el(`<div class="card"><h3>🏅 今週よく出会ったAI</h3><div class="rank"></div></div>`);
+  rank.forEach((n,i)=>{
+    const c = CHARS[n];
+    rk.querySelector(".rank").appendChild(el(`<div class="rk">
+      <div class="rava" style="background:${c.grad}">${c.img?`<img src="${c.img}" alt="${n}">`:c.emoji}</div>
+      <div class="rn" style="color:${c.color}">${n}</div><div class="rp">${i+1}位・${said[n]}回</div></div>`));
+  });
+  v.appendChild(rk);
+
+  // どの視点に反応したか
+  const rc = el(`<div class="card"><h3>🔭 4つの視点との距離</h3></div>`);
+  const maxR = Math.max(1, ...NAMES.map(n=>reacts[n].hit+reacts[n].push));
+  for(const n of NAMES){
+    const r = reacts[n];
+    rc.appendChild(el(`<div class="axrow">
+      <div class="axl"><span style="color:${CHARS[n].color};font-weight:700">${CHARS[n].emoji} ${n}（${CHARS[n].role}）</span><span>💡${r.hit}・💥${r.push}</span></div>
+      <div class="bar"><i style="width:${Math.round((r.hit+r.push)/maxR*100)}%"></i></div></div>`));
+  }
+  rc.appendChild(el(`<div class="hyp" style="margin-top:8px">反応が多い＝良い、ではありません。反発も思考が動いた証拠です。</div>`));
+  v.appendChild(rc);
+
+  // 思考の使い方（優劣ではない）
+  const spread = NAMES.filter(n=>reacts[n].hit>0).length;
+  const axes = [
+    ["言語化する力",       fieldsMax? Math.round(fields/fieldsMax*100) : 10, "終了時に自分の言葉を残せた割合"],
+    ["曖昧さを保つ力",     Math.min(100, (unknown+undecided)*25+10), "「まだ分からない」を選べた回数から"],
+    ["反論を受け止める力", Math.min(100, totalPush*20+10), "反発を感じても対話を続けた回数から"],
+    ["視点を変える力",     Math.min(100, spread*25), "違うタイプの意見に「刺さった」が分散したか"],
+    ["自分軸",             log.length? Math.round(lines/log.length*100) : 0, "最後を自分の一文で締めた割合"],
+  ];
+  const ax = el(`<div class="card"><h3>🧭 今週の思考の使い方（優劣ではありません）</h3></div>`);
+  for(const [nm,val,why] of axes){
+    ax.appendChild(el(`<div class="axrow"><div class="axl"><span>${nm}</span><span>${val}</span></div>
+      <div class="bar"><i style="width:${val}%"></i></div>
+      <div class="hyp">${why}</div></div>`));
+  }
+  v.appendChild(ax);
+
+  // ふりかえりメモ
+  const unused = NAMES.filter(n=>(reacts[n].hit+reacts[n].push)===0);
+  const lastLines = log.filter(e=>e.final && e.final.line).slice(-2).map(e=>e.final.line);
+  const memo = el(`<div class="card"><h3>📝 ふりかえりメモ</h3><div class="memo"></div></div>`);
+  const mm = memo.querySelector(".memo");
+  if(totalPush>0) mm.appendChild(el(`<span>🔶 反発した視点：<b style="color:${CHARS[mostPush].color}">${mostPush}</b></span>`));
+  if(totalHit>0) mm.appendChild(el(`<span>💠 頼った視点：<b style="color:${CHARS[mostHit].color}">${mostHit}</b></span>`));
+  mm.appendChild(el(`<span>👁 まだ使っていない視点：${unused.length?unused.join("・"):"なし（全視点と対話済み）"}</span>`));
+  lastLines.forEach(l=>mm.appendChild(el(`<span>✍ ${escapeHtml(l.length>30?l.slice(0,30)+"…":l)}</span>`)));
+  v.appendChild(memo);
+
+  // 思考スタイル（相談が少ない週は更新しない）
+  const style = el(`<div class="card"><h3>🎭 今週の思考スタイル</h3></div>`);
+  if(log.length < 2 || (totalHit+totalPush)===0){
+    style.appendChild(el(`<div class="hyp">今週は記録が少ないため、タイプは更新していません。もう少し対話が溜まったら映します。</div>`));
+  }else{
+    const TYPE = { KURO:"現実を直視して考えるタイプ", RAY:"前提を疑って考えるタイプ", MIKA:"望みから考えるタイプ", YUI:"余白を残して考えるタイプ" };
+    style.appendChild(el(`<div style="font-size:14px;font-weight:700;margin-bottom:6px">${TYPE[mostHit]}</div>
+      <div class="kv">
+        <span>よく頼った視点 <b style="color:${CHARS[mostHit].color}">${mostHit}</b></span>
+        <span>強く反発した視点 <b style="color:${CHARS[mostPush].color}">${mostPush}</b></span>
+      </div>
+      <div class="hyp" style="margin-top:8px">固定的な性格診断ではなく、最近の対話で表れた「現在の使い方」です。来週は変わっているかもしれません。</div>`));
+  }
+  v.appendChild(style);
+
+  // 次回のための思考トレーニング（現実への命令はしない）
+  const trains = [
+    "次の相談では、4人に話す前に「自分の考え」をひとこと録音してみる",
+    `一度だけ、最も反発した${mostPush ? mostPush : "キャラクター"}の立場に立って同じ悩みを考えてみる`,
+    "すぐに結論を出さず、「まだ分からない」を1回は残してみる",
+    "自分と反対の立場が「守ろうとしているもの」を1つ想像してみる",
+    "AIを使わずに考えられた場面があったら、それも覚えておく（それは後退ではなく成長です）",
+  ];
+  const tr = el(`<div class="card"><h3>🏋️ 来週試す思考トレーニング</h3></div>`);
+  trains.slice(0,3).forEach(t=>tr.appendChild(el(`<div class="axrow" style="font-size:12.5px;line-height:1.8">・${t}</div>`)));
+  v.appendChild(tr);
+}
+
+/* ============================================================
+   タブ・画面遷移・初期化
+   ============================================================ */
+function setTab(which){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.t===which));
+  $("#view-intro").classList.toggle("hide", !(which==="talk" && !S));
+  $("#view-chat").classList.toggle("hide", !(which==="talk" && S && !S.finalized));
+  $("#view-final").classList.add("hide");
+  $("#view-done").classList.toggle("hide", !(which==="talk" && S && S.finalized));
+  $("#view-history").classList.toggle("hide", which!=="history");
+  $("#view-report").classList.toggle("hide", which!=="report");
+  $("#dock").classList.toggle("hide", !(which==="talk" && S && !S.finalized));
+  $("#stepper").classList.toggle("hide", !(which==="talk" && S && !S.finalized));
+  if(which==="history") buildHistory();
+  if(which==="report") buildReport();
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setTab(t.dataset.t));
+
+function newChat(){
+  if(busy) return;
+  stopRec();
+  S = null;
+  $("#view-chat").innerHTML = "";
+  $("#intake").value = "";
+  $("#z-hook").value = $("#z-push").value = $("#z-ok").value = $("#z-undec").value = $("#z-line").value = "";
+  $("#view-done").classList.add("hide");
+  $("#view-final").classList.add("hide");
+  $("#stepper").classList.add("hide");
+  $("#dock").classList.add("hide");
+  $("#view-intro").classList.remove("hide");
+  $("#view-chat").classList.add("hide");
+  setTab("talk");
+  updateAiBadge();
+  selectCard("team");
+  $("#go").disabled = !$("#intake").value.trim();
+  window.scrollTo(0,0);
+}
+$("#new-chat").onclick = newChat;
+
+/* ---------- キャラセレクト（横スワイプカルーセル） ---------- */
+let chatSel = "team";
+let currentIntensity = "std";
+function selectCard(key){
+  chatSel = key;
+  document.querySelectorAll(".ccard").forEach(c=>c.classList.toggle("sel", c.dataset.k===key));
+  if(key==="team"){
+    $("#cs-note").textContent = "4人が異なる立場から議論します。誰の意見に反発するかも、大事なデータ。";
+    $("#go").textContent = "4人に話してみる";
+  }else{
+    $("#cs-note").textContent = `${key}と1対1でじっくり話します。他の3人は登場しません。`;
+    $("#go").textContent = `${key}に話してみる`;
+  }
+}
+function renderCharSelect(){
+  const wrap = $("#cs-scroll"); wrap.innerHTML = "";
+  const cards = [{ key:"team", emoji:"💠", grad:"linear-gradient(160deg,#33406e,#1b2a5e)", img:null,
+                   name:"4人の視点会議", role:"基本はこちら", bio:"4つの偏った視点が、あなたの悩みを議論する" }]
+    .concat(NAMES.map(n=>({ key:n, emoji:CHARS[n].emoji, grad:CHARS[n].grad, img:CHARS[n].img,
+                            name:n, role:`${CHARS[n].axis}｜${CHARS[n].role}`, bio:CHARS[n].line })));
+  for(const c of cards){
+    const node = el(`<div class="ccard" data-k="${c.key}">
+      <div class="art" style="background:${c.grad}">${c.img?`<img src="${c.img}" alt="${c.name}">`:c.emoji}</div>
+      <div class="meta"><div class="n">${c.name}</div><div class="r">${c.role}</div><div class="b">${c.bio}</div></div>
+      <div class="pill">✓ 選択中</div></div>`);
+    node.onclick = ()=>selectCard(c.key);
+    wrap.appendChild(node);
+  }
+  const dots = $("#cs-dots");
+  dots.innerHTML = cards.map((_,i)=>`<i class="${i===0?"on":""}"></i>`).join("");
+  // PC用の左右矢印（マウスだと横スワイプできないため）。スマホはCSSで非表示＝スワイプで送る
+  const step = dir => wrap.scrollBy({ left: dir * (wrap.querySelector(".ccard").offsetWidth + 10), behavior:"smooth" });
+  $("#cs-prev").onclick = ()=>step(-1);
+  $("#cs-next").onclick = ()=>step(1);
+  // ドット追従（rAFは省電力で止まることがあるためsetTimeoutスロットル）
+  let dotTimer = null;
+  wrap.addEventListener("scroll", ()=>{
+    if(dotTimer) return;
+    dotTimer = setTimeout(()=>{
+      dotTimer = null;
+      const center = wrap.scrollLeft + wrap.clientWidth/2;
+      let best = 0, bd = Infinity;
+      [...wrap.children].forEach((k,i)=>{
+        const d = Math.abs(k.offsetLeft + k.offsetWidth/2 - center);
+        if(d < bd){ bd = d; best = i; }
+      });
+      dots.querySelectorAll("i").forEach((d,i)=>d.classList.toggle("on", i===best));
+    }, 80);
+  });
+  selectCard("team");
+}
+
+/* 入口の描画 */
+(function initIntro(){
+  renderCharSelect();
+  const iw = $("#intens");
+  INTENSITIES.forEach(it=>{
+    const b = el(`<div class="iopt ${it.key==="std"?"sel":""}">${it.label}<small>${it.sub}</small></div>`);
+    b.onclick = ()=>{ document.querySelectorAll(".iopt").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); currentIntensity = it.key; };
+    iw.appendChild(b);
+  });
+})();
+
+$("#intake").addEventListener("input", ()=>{ $("#go").disabled = !$("#intake").value.trim(); });
+$("#go").onclick = startConsult;
+$("#mic1").onclick = ()=>{ if(!SR){ alert("このブラウザは音声入力に対応していません。文字で入力してください。"); return; } toggleRec($("#intake"), $("#mic1")); };
+$("#mic2").onclick = ()=>{ if(!SR){ alert("このブラウザは音声入力に対応していません。"); return; } toggleRec($("#reply"), $("#mic2")); };
+if(!SR){ $("#mic1").style.opacity=.4; $("#mic2").style.opacity=.4; }
+
+/* ドック */
+function setSendEnabled(){ $("#send").disabled = busy || !($("#reply").value||"").trim(); }
+$("#reply").addEventListener("input", function(){
+  this.style.height="auto"; this.style.height=Math.min(this.scrollHeight,110)+"px"; setSendEnabled();
+});
+$("#send").onclick = ()=>{
+  const t = $("#reply").value.trim();
+  if(!t || busy) return;
+  $("#reply").value=""; $("#reply").style.height="auto"; setSendEnabled();
+  sendReply(t);
+};
+
+/* 立入禁止ゾーン */
+$("#z-save").onclick = ()=>{
+  if(!$("#z-line").value.trim()){
+    if(!confirm("一文が空のままです。今日は書かずに終わりますか？")) return;
+    return finalizeWith(true);
+  }
+  finalizeWith(false);
+};
+$("#z-skip").onclick = ()=>finalizeWith(true);
+$("#z-back").onclick = backToChat;
+function finalizeWith(skipped){ S.finalized = true; saveFinal(skipped); $("#stepper").classList.add("hide"); }
+$("#done-new").onclick = newChat;
+$("#done-report").onclick = ()=>setTab("report");
+</script>
+</body>
+</html>
