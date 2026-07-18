@@ -424,16 +424,16 @@ const CHARS = {
             axis:"クリティカル×陰", role:"鋭い皮肉家の現実主義者",
             desc:"きれいな言葉を簡単には信じない。あなたが避けている現実を、静かに指摘する。",
             line:"それ、思い込みを正当化してない？現実、甘くないよ。" },
-  "RAY":  { emoji:"⚡", color:"var(--ray)", grad:"linear-gradient(160deg,#ffb36b,#ee6a1f)", img:null,
-            axis:"クリティカル×陽", role:"エネルギッシュな挑発家",
-            desc:"明るいテンションで前提をひっくり返す。「それ、本当に悩むこと？」",
-            line:"それって本当にやりたいこと？刺激、足りてる？" },
-  "MIKA": { emoji:"🔥", color:"var(--mika)", grad:"linear-gradient(160deg,#4fd0bd,#0f8478)", img:null,
-            axis:"肯定×陽", role:"熱量の高い応援者",
+  "LEO":  { emoji:"⚡", color:"var(--ray)", grad:"linear-gradient(160deg,#ffb36b,#ee6a1f)", img:"img/leo.png",
+            axis:"クリティカル×陽", role:"関西弁のエネルギッシュな挑発家",
+            desc:"明るい関西弁のノリで前提をひっくり返す。「それ、ほんまに悩むことなん？」",
+            line:"それ、ほんまにやりたいことなん？刺激、足りてる？" },
+  "MIKA": { emoji:"🔥", color:"var(--mika)", grad:"linear-gradient(160deg,#4fd0bd,#0f8478)", img:"img/mika.png",
+            axis:"肯定×陽", role:"全肯定ギャルの応援者",
             desc:"あなたの可能性と本当の望みを問う。小さくまとまるのを許さない。",
             line:"あなたのままですごいよ！可能性、いっぱいあるよ！" },
-  "YUI":  { emoji:"🌙", color:"var(--yui)", grad:"linear-gradient(160deg,#a89af0,#6a58c8)", img:null,
-            axis:"肯定×陰", role:"静かなメガネの図書委員系",
+  "YUI":  { emoji:"🌙", color:"var(--yui)", grad:"linear-gradient(160deg,#a89af0,#6a58c8)", img:"img/yui.png",
+            axis:"肯定×陰", role:"ダウナー系メガネの図書委員",
             desc:"言葉にならない気持ちを、急かさずに待つ。「まだ決めない」も認める。",
             line:"焦らなくていいよ。ちゃんと考えてること、伝わるよ。" },
 };
@@ -469,10 +469,10 @@ const OFF = {
       "今の話、実際に起きたことと「そう感じただけのこと」が混ざってる。俺はまだどっちがどっちか分からない。",
       "その言葉、便利すぎないか。便利な言葉は、本音を隠すのにも使えるからな。",
     ],
-    RAY: [
-      "ねぇ、気づいてた？今の話、主語がほとんど相手だったよ。あなた自身はどこにいるの？",
-      "「{q}」って言ったけど、それが問題だって誰が決めたの？そこから疑ってもよくない？",
-      "面白いね。同じ言葉が2回出てきた。無意識に繰り返す言葉って、たいてい重要なんだよね。",
+    LEO: [
+      "なあ、気づいてた？今の話、主語がほとんど相手やったで。あんた自身はどこにおるん？",
+      "「{q}」って言うてたけど、それが問題やって誰が決めたん？そこから疑ってもええんちゃう？",
+      "おもろいなあ。同じ言葉が2回出てきたで。無意識に繰り返す言葉って、たいてい大事なんよ。",
     ],
     MIKA: [
       "まず言わせて。そこまで言葉を探しながら話すってことは、どうでもいい話じゃないんだよ。それは確かだと思う！",
@@ -495,10 +495,10 @@ const OFF = {
       "選ばない、っていうのも選択だからな。今のまま待つことで失ってるものから目を逸らしてないか。",
       "「仕方ない」で片づけようとしてる部分にこそ、本音が埋まってると思うけどな。",
     ],
-    RAY: [
-      "KUROは厳しいねぇ。でもさ、そもそも「うまくやらなきゃいけない」って前提、一回ひっくり返してみない？失敗したら何がそんなにまずいの？",
-      "じゃあ極端な話。誰にも褒められず、誰にも責められない世界だったら、あなたどうする？",
-      "3か月後のあなたがこの場面を見てたら、たぶん今と違うところを気にしてると思うんだよね。",
+    LEO: [
+      "KUROは厳しいなあ。でもさ、そもそも「うまくやらなあかん」って前提、一回ひっくり返してみいひん？失敗したら何がそんなにまずいん？",
+      "ほな極端な話や。誰にも褒められず、誰にも責められへん世界やったら、あんたどうする？",
+      "3か月後のあんたがこの場面見てたら、たぶん今と違うとこ気にしてると思うで。",
     ],
     MIKA: [
       "KUROの言い方には反対。きっかけが不安でも、大切にしたい気持ちまで偽物とは限らないでしょ。動機がきれいじゃないだけで、全部を疑わなくていい。",
@@ -520,9 +520,9 @@ const OFF = {
       "最初の説明と今とで、使ってる言葉が変わってきてるな。俺はそれ自体が答えの一部だと思う。",
       "結論を出せとは言わない。ただ、今日目を逸らさなかったことは覚えておいた方がいい。",
     ],
-    RAY: [
-      "今日のあなた、誰かの意見にぐっと反応した瞬間があったよね。あそこに本音が透けてた気がするなぁ。",
-      "最初より、分からないことが増えたでしょ？それ、後退じゃなくて解像度が上がったってことだからね。",
+    LEO: [
+      "今日のあんた、誰かの意見にぐっと反応した瞬間あったやろ。あそこに本音が透けてた気がするなあ。",
+      "最初より、分からんことが増えたやろ？それ、後退ちゃうで、解像度が上がったってことやからな。",
     ],
     MIKA: [
       "結論はまだなくていい。でも「自分が何を守りたいか」は、最初よりはっきりしてきたんじゃない？",
@@ -542,7 +542,7 @@ const OFF = {
 // 「分からない」への返し（分からないを有効な回答として扱う）
 const OFF_UNSURE = [
   ["YUI","……「分からない」って言えるのは、ちゃんと考えてる証拠だと思う。分からないまま、もう少しだけ一緒に居よう。"],
-  ["RAY","お、正直でいいね。じゃあ質問を変えよう。答えやすいやつにするからさ。"],
+  ["LEO","お、正直でええやん。ほな質問変えるわ。答えやすいやつにするからさ。"],
   ["MIKA","分からなくて当然だよ、簡単な話じゃないもん。じゃあ感覚だけでいい、なんとなくでも。"],
 ];
 
@@ -591,7 +591,7 @@ PRISMの目的は、ユーザーの悩みを解決することではありませ
 
 【キャラクター】
 KURO：クリティカル×陰。偏屈なリアリスト。本人が避けている現実、言い訳、自己欺瞞、選択の代償を見る。冷静で皮肉がある。努力・友情・夢などのきれいな言葉を簡単には信じない。本人を攻撃するのではなく、思考の逃げ道を減らす。嘘をついていると断定せず「別の見方をすると」「もしそうだとしたら」という仮説として提示する。一人称は「俺」。口調は低温で端的。
-RAY：クリティカル×陽。明るく挑発する批評家。明るいテンションで前提をひっくり返す。大胆な例え、極端な仮定、時間軸の変更、第三者視点を使う。否定的な内容でも会話を暗くしすぎない。目立つ言い回しだけで内容を空虚にしない。
+LEO：クリティカル×陽。関西弁で明るく挑発する批評家。関西弁（「〜やん」「〜ちゃう？」「ほんま」「〜やで」等）の軽快なノリで前提をひっくり返す。大胆な例え、極端な仮定、時間軸の変更、第三者視点を使う。否定的な内容でも会話を暗くしすぎない。ノリだけで中身を空虚にしない。一人称は「俺」。
 MIKA：肯定×陽。熱量の高い応援者。本人の可能性・欲望・行動したい気持ちを肯定し、小さくまとまることへ反論する。単純な「頑張れ」では終わらず、本人の望みを問う。何でも「大丈夫」と肯定しない。失敗を避けるために望みまで諦めている可能性を扱う。
 YUI：肯定×陰。静かな共感者。眼鏡の図書委員系。言葉にならない感情、迷い、沈黙、まだ決めたくない気持ちを静かに扱う。強く励まさず、小さな感情を拾う。発言や質問を必要以上に増やさない。「まだ分からない」を解決すべき失敗ではなく有効な状態として扱う。「……」から話し始めることがある。
 
@@ -613,8 +613,8 @@ YUI：肯定×陰。静かな共感者。眼鏡の図書委員系。言葉にな
   1. KURO（reply_to空・口火）
   2. MIKA → KURO に反論
   3. KURO → MIKA に再反論（黙らない）
-  4. RAY → KURO に便乗しつつ別角度
-  5. MIKA → RAY に反論
+  4. LEO → KURO に便乗しつつ別角度
+  5. MIKA → LEO に反論
   6. YUI → 全体を受けて静かに一言
   （↑これはあくまで型。中身は毎回その相談に即して変える）
 - 各発言は2〜3文。ただし1回で語り尽くさず、相手の発言を受けて言い足す“打ち合い”で会話量を増やす。
@@ -758,10 +758,15 @@ function el(html){ const t=document.createElement("template"); t.innerHTML=html.
 function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 // 自動スクロールは無効化（メッセージが出るたびに画面が動かず、ユーザーが自分のペースで読める）
 function scrollEnd(){ /* no-op */ }
+// 画像タグ。ファイルが無い/読み込み失敗時は絵文字に自動フォールバック（画像を置けば自動で絵に変わる）
+function imgFallback(elImg, emoji){ const p = elImg.parentNode; elImg.remove(); if(p) p.insertAdjacentText("beforeend", emoji); }
+function imgTag(src, alt, emoji){
+  return `<img src="${src}" alt="${escapeHtml(alt)}" onerror="imgFallback(this,'${emoji}')">`;
+}
 function avaHtml(name){
   const c = CHARS[name];
   return c.img
-    ? `<span class="ava" style="border-color:${c.color}"><img src="${c.img}" alt="${name}"></span>`
+    ? `<span class="ava" style="border-color:${c.color};background:${c.grad}">${imgTag(c.img, name, c.emoji)}</span>`
     : `<span class="ava" style="border-color:${c.color};background:${c.grad}">${c.emoji}</span>`;
 }
 function extractQuote(text){
@@ -887,7 +892,7 @@ async function offlineRound(userText, isFirst){
   }else if(isFirst){
     speakers = NAMES.filter(n=>!S.muted.has(n)).map(n=>({n}));
   }else{
-    const critical = ["KURO","RAY"].filter(n=>!S.muted.has(n));
+    const critical = ["KURO","LEO"].filter(n=>!S.muted.has(n));
     const positive = ["MIKA","YUI"].filter(n=>!S.muted.has(n));
     const c1 = critical[S.offRound % Math.max(critical.length,1)];
     const p1 = positive[S.offRound % Math.max(positive.length,1)];
@@ -1238,12 +1243,12 @@ function buildReport(){
       <span>自分の一文 <b>${lines}</b>回</span>
     </div></div>`));
 
-  // 視点バランスレーダー（上RAY／右MIKA／下YUI／左KURO のひし形）
+  // 視点バランスレーダー（上LEO／右MIKA／下YUI／左KURO のひし形）
   const vals = {}; NAMES.forEach(n=> vals[n] = reacts[n].hit + reacts[n].push + (said[n]?1:0));
   const vmax = Math.max(1, ...NAMES.map(n=>vals[n]));
   const CX=130, CY=104, R=72, MIN=16;
   const rOf = n => MIN + (vals[n]/vmax)*(R-MIN);
-  const poly = `${CX},${CY-rOf("RAY")} ${CX+rOf("MIKA")},${CY} ${CX},${CY+rOf("YUI")} ${CX-rOf("KURO")},${CY}`;
+  const poly = `${CX},${CY-rOf("LEO")} ${CX+rOf("MIKA")},${CY} ${CX},${CY+rOf("YUI")} ${CX-rOf("KURO")},${CY}`;
   const rad = el(`<div class="card"><h3>💠 視点バランスレーダー</h3>
     <div class="radarw"><svg viewBox="0 0 260 208" width="260" height="208">
       <polygon points="${CX},${CY-R} ${CX+R},${CY} ${CX},${CY+R} ${CX-R},${CY}" fill="none" stroke="#e2e5f0" stroke-width="1.5"/>
@@ -1251,7 +1256,7 @@ function buildReport(){
       <line x1="${CX}" y1="${CY-R}" x2="${CX}" y2="${CY+R}" stroke="#edf0f8"/>
       <line x1="${CX-R}" y1="${CY}" x2="${CX+R}" y2="${CY}" stroke="#edf0f8"/>
       <polygon points="${poly}" fill="rgba(124,107,214,.20)" stroke="#7c6bd6" stroke-width="2"/>
-      <text x="${CX}" y="${CY-R-9}" text-anchor="middle" font-size="10" font-weight="700" fill="#f2762e">RAY（クリティカル×陽）</text>
+      <text x="${CX}" y="${CY-R-9}" text-anchor="middle" font-size="10" font-weight="700" fill="#f2762e">LEO（クリティカル×陽）</text>
       <text x="${CX+R+4}" y="${CY+3}" text-anchor="start" font-size="10" font-weight="700" fill="#159889">MIKA</text>
       <text x="${CX}" y="${CY+R+14}" text-anchor="middle" font-size="10" font-weight="700" fill="#7c6bd6">YUI（肯定×陰）</text>
       <text x="${CX-R-4}" y="${CY+3}" text-anchor="end" font-size="10" font-weight="700" fill="#3d4152">KURO</text>
@@ -1265,7 +1270,7 @@ function buildReport(){
   rank.forEach((n,i)=>{
     const c = CHARS[n];
     rk.querySelector(".rank").appendChild(el(`<div class="rk">
-      <div class="rava" style="background:${c.grad}">${c.img?`<img src="${c.img}" alt="${n}">`:c.emoji}</div>
+      <div class="rava" style="background:${c.grad}">${c.img?imgTag(c.img, n, c.emoji):c.emoji}</div>
       <div class="rn" style="color:${c.color}">${n}</div><div class="rp">${i+1}位・${said[n]}回</div></div>`));
   });
   v.appendChild(rk);
@@ -1315,7 +1320,7 @@ function buildReport(){
   if(log.length < 2 || (totalHit+totalPush)===0){
     style.appendChild(el(`<div class="hyp">今週は記録が少ないため、タイプは更新していません。もう少し対話が溜まったら映します。</div>`));
   }else{
-    const TYPE = { KURO:"現実を直視して考えるタイプ", RAY:"前提を疑って考えるタイプ", MIKA:"望みから考えるタイプ", YUI:"余白を残して考えるタイプ" };
+    const TYPE = { KURO:"現実を直視して考えるタイプ", LEO:"前提を疑って考えるタイプ", MIKA:"望みから考えるタイプ", YUI:"余白を残して考えるタイプ" };
     style.appendChild(el(`<div style="font-size:14px;font-weight:700;margin-bottom:6px">${TYPE[mostHit]}</div>
       <div class="kv">
         <span>よく頼った視点 <b style="color:${CHARS[mostHit].color}">${mostHit}</b></span>
@@ -1399,7 +1404,7 @@ function renderCharSelect(){
                             name:n, role:`${CHARS[n].axis}｜${CHARS[n].role}`, bio:CHARS[n].line })));
   for(const c of cards){
     const node = el(`<div class="ccard" data-k="${c.key}">
-      <div class="art" style="background:${c.grad}">${c.img?`<img src="${c.img}" alt="${c.name}">`:c.emoji}</div>
+      <div class="art" style="background:${c.grad}">${c.img?imgTag(c.img, c.name, c.emoji):c.emoji}</div>
       <div class="meta"><div class="n">${c.name}</div><div class="r">${c.role}</div><div class="b">${c.bio}</div></div>
       <div class="pill">✓ 選択中</div></div>`);
     node.onclick = ()=>selectCard(c.key);
