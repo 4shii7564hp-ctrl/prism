@@ -234,6 +234,44 @@
   .memo span{ font-size:11px; border:1px solid var(--line); border-radius:9999px; padding:4px 10px; background:#fff; }
   .danger-btn{ width:100%; margin-top:10px; border:1px solid #f0c1c1; background:#fff; color:var(--danger);
                border-radius:12px; padding:10px; font-size:12px; cursor:pointer; }
+
+  /* ============ 音声入力オーバーレイ（画像のような専用画面） ============ */
+  .voverlay{ position:fixed; inset:0; z-index:100; padding:28px 24px calc(28px + env(safe-area-inset-bottom));
+             background:radial-gradient(120% 80% at 50% 20%, #1a1f3d 0%, #0c0e1c 70%); color:#eef1ff;
+             display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+             animation:prism-in .28s ease both; }
+  .vclose{ position:absolute; top:16px; left:16px; width:38px; height:38px; border-radius:50%;
+           background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#c9cde8;
+           font-size:16px; cursor:pointer; }
+  .vtitle{ font-size:23px; font-weight:800; letter-spacing:.06em; }
+  .vsub{ font-size:13px; color:#9aa0c4; text-align:center; line-height:1.9; margin-top:-8px; }
+  .vmic{ position:relative; width:132px; height:132px; border-radius:50%; border:none; cursor:pointer;
+         background:radial-gradient(circle at 50% 38%, #2b3160 0%, #141733 100%);
+         display:grid; place-items:center; font-size:48px; color:#fff; margin:4px 0; }
+  .vmic::before{ content:""; position:absolute; inset:-7px; border-radius:50%; z-index:-1; filter:blur(7px); opacity:.85;
+                 background:conic-gradient(#8ec5ff,#c9a7f5,#ffb199,#9ae6c9,#8ec5ff); }
+  .vmic.live{ animation:vpulse 1.7s ease-out infinite; }
+  @keyframes vpulse{ 0%{ box-shadow:0 0 0 0 rgba(142,197,255,.40);} 100%{ box-shadow:0 0 0 46px rgba(142,197,255,0);} }
+  .vwave{ display:flex; align-items:center; justify-content:center; gap:4px; height:46px; }
+  .vwave i{ width:4px; height:8px; border-radius:2px; background:linear-gradient(#8ec5ff,#c9a7f5); opacity:.85; }
+  .voverlay.rec .vwave i{ animation:vbar 1s ease-in-out infinite; }
+  .vwave i:nth-child(3n){ background:linear-gradient(#c9a7f5,#ffb199); }
+  .vwave i:nth-child(3n+1){ background:linear-gradient(#9ae6c9,#8ec5ff); }
+  .vwave i:nth-child(1){ animation-delay:0s } .vwave i:nth-child(2){ animation-delay:.12s }
+  .vwave i:nth-child(3){ animation-delay:.28s } .vwave i:nth-child(4){ animation-delay:.06s }
+  .vwave i:nth-child(5){ animation-delay:.34s } .vwave i:nth-child(6){ animation-delay:.18s }
+  .vwave i:nth-child(7){ animation-delay:.42s } .vwave i:nth-child(8){ animation-delay:.10s }
+  .vwave i:nth-child(9){ animation-delay:.30s } .vwave i:nth-child(10){ animation-delay:.22s }
+  .vwave i:nth-child(11){ animation-delay:.38s } .vwave i:nth-child(12){ animation-delay:.04s }
+  .vwave i:nth-child(13){ animation-delay:.26s } .vwave i:nth-child(14){ animation-delay:.16s }
+  .vwave i:nth-child(15){ animation-delay:.32s }
+  @keyframes vbar{ 0%,100%{ height:8px; } 50%{ height:40px; } }
+  .vstatus{ font-size:13px; color:#8ec5ff; font-weight:600; }
+  .vtranscript{ min-height:32px; max-height:26vh; overflow-y:auto; font-size:15.5px; line-height:1.85;
+                text-align:center; color:#e7eaff; max-width:92%; }
+  .vtranscript:empty::before{ content:"ここに話した言葉が出ます"; color:#6b7099; }
+  .vdone{ margin-top:6px; border:none; border-radius:9999px; padding:13px 38px; font-size:15px; font-weight:800;
+          cursor:pointer; color:#0c0e1c; background:linear-gradient(90deg,#8ec5ff,#c9a7f5,#ffb199,#9ae6c9); }
 </style>
 </head>
 <body>
@@ -353,6 +391,18 @@
     <button id="send" disabled>➤</button>
   </div>
 </footer>
+
+<!-- 音声入力の専用画面（マイクを押すと出る） -->
+<div id="voice-overlay" class="voverlay hide">
+  <button class="vclose" id="v-close" aria-label="閉じる">✕</button>
+  <div class="vtitle">話してみよう</div>
+  <div class="vsub">うまく話せなくても大丈夫。<br>そのままの気持ちで。</div>
+  <button class="vmic" id="v-mic" aria-label="録音の一時停止・再開">🎤</button>
+  <div class="vwave" id="v-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="vstatus" id="v-status">話し中… タップで一時停止</div>
+  <div class="vtranscript" id="v-transcript"></div>
+  <button class="vdone" id="v-done">この内容で決定</button>
+</div>
 
 </div>
 <script>
@@ -1051,23 +1101,56 @@ function startRec(targetTa, btn){
     lastResultAt = Date.now();
     recTarget.value = recBase + fin + interim;
     recTarget.dispatchEvent(new Event("input"));
+    if(!$("#voice-overlay").classList.contains("hide")) $("#v-transcript").textContent = recTarget.value;
   };
-  rec.onend = ()=>{ rec=null; document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec")); };
+  rec.onend = ()=>{
+    rec=null; document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec"));
+    // 予期せず認識が終わった（沈黙タイムアウト等）ときは、オーバーレイを一時停止表示にして再開できるようにする
+    if(voiceRecording){ voiceRecording=false; if(!$("#voice-overlay").classList.contains("hide")) setVoiceUI(false); }
+  };
   rec.onerror = (e)=>{
     try{rec&&rec.stop();}catch(_){}
     rec=null; document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec"));
     if(e && (e.error==="not-allowed" || e.error==="service-not-allowed")){
       alert("マイクを使えませんでした。\nブラウザのマイク許可がオフか、httpsでないため制限されています。文字入力を使ってください。");
+      closeVoice();
     }
   };
-  try{ rec.start(); btn.classList.add("rec"); }
-  catch(err){ rec=null; alert("音声入力を開始できませんでした。文字で入力してください。"); }
+  try{ rec.start(); if(btn) btn.classList.add("rec"); }
+  catch(err){ rec=null; alert("音声入力を開始できませんでした。文字で入力してください。"); closeVoice(); }
 }
 const obsSet = new Set();
 function pendingObs(s){ if(!obsSet.has(s)){ obsSet.add(s); } }
 function stopRec(){ if(rec){ try{rec.stop();}catch(_){} rec=null; }
   document.querySelectorAll(".micbtn,#mic2").forEach(b=>b.classList.remove("rec")); }
 function toggleRec(ta, btn){ rec ? stopRec() : startRec(ta, btn); }
+
+/* ---------- 音声入力オーバーレイ（画像のような専用画面） ---------- */
+let voiceTarget = null, voiceRecording = false;
+function setVoiceUI(recording){
+  $("#voice-overlay").classList.toggle("rec", recording);
+  $("#v-mic").classList.toggle("live", recording);
+  $("#v-status").textContent = recording ? "話し中… タップで一時停止" : "一時停止中… マイクをタップで再開";
+}
+function openVoice(ta){
+  const reason = voiceUnavailableReason();
+  if(reason){ alert(reason); return; }
+  voiceTarget = ta;
+  $("#v-transcript").textContent = ta.value || "";
+  $("#voice-overlay").classList.remove("hide");
+  voiceRecording = true; setVoiceUI(true);
+  startRec(ta, null);
+}
+function toggleVoicePause(){
+  if(voiceRecording){ voiceRecording = false; stopRec(); setVoiceUI(false); }
+  else { voiceRecording = true; setVoiceUI(true); startRec(voiceTarget, null); }
+}
+function closeVoice(){
+  voiceRecording = false; stopRec();
+  $("#voice-overlay").classList.add("hide");
+  $("#voice-overlay").classList.remove("rec");
+  voiceTarget = null;
+}
 
 /* ============================================================
    履歴タブ
@@ -1359,8 +1442,12 @@ function renderCharSelect(){
 
 $("#intake").addEventListener("input", ()=>{ $("#go").disabled = !$("#intake").value.trim(); });
 $("#go").onclick = startConsult;
-$("#mic1").onclick = ()=>{ const r=voiceUnavailableReason(); if(r){ alert(r); return; } toggleRec($("#intake"), $("#mic1")); };
-$("#mic2").onclick = ()=>{ const r=voiceUnavailableReason(); if(r){ alert(r); return; } toggleRec($("#reply"), $("#mic2")); };
+// マイクを押すと専用の音声入力画面（オーバーレイ）を開く
+$("#mic1").onclick = ()=> openVoice($("#intake"));
+$("#mic2").onclick = ()=> openVoice($("#reply"));
+$("#v-mic").onclick = toggleVoicePause;
+$("#v-done").onclick = closeVoice;
+$("#v-close").onclick = closeVoice;
 // 音声が使えない環境（非対応 or 非https）はマイクボタンを薄く表示
 if(voiceUnavailableReason()){ $("#mic1").style.opacity=.5; $("#mic2").style.opacity=.5; }
 
