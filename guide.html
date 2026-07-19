@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#1b2a5e" />
+<title>PRISM 使い方ガイド｜答えをくれない、思考のためのAI</title>
+<style>
+  html,body{ margin:0; background:#f3f4fa; }
+  @media (prefers-color-scheme:dark){ html,body{ background:#0e1020; } }
+  :root[data-theme="light"] html,:root[data-theme="light"] body{ background:#f3f4fa; }
+  :root[data-theme="dark"] html,:root[data-theme="dark"] body{ background:#0e1020; }
+  :root{
+    --bg:#f3f4fa; --panel:#ffffff; --line:#e3e6f1; --ink:#1b2540; --sub:#767c96;
+    --navy:#1b2a5e; --navy-soft:#33407a;
+    --kuro:#4a5063; --leo:#e26a1f; --mika:#0f9384; --yui:#6f5cd0;
+    --grad:linear-gradient(90deg,#8ec5ff,#c9a7f5,#ffb199,#9ae6c9);
+    --shadow:0 1px 3px rgba(27,42,94,.06),0 8px 24px rgba(27,42,94,.06);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0e1020; --panel:#171a2e; --line:#282c44; --ink:#e9ebf7; --sub:#9aa0c0;
+      --navy:#cdd6ff; --navy-soft:#aeb8e6;
+      --kuro:#9aa2bd; --leo:#ff9d5c; --mika:#2fc7b4; --yui:#a897f2;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f3f4fa; --panel:#ffffff; --line:#e3e6f1; --ink:#1b2540; --sub:#767c96;
+    --navy:#1b2a5e; --navy-soft:#33407a;
+    --kuro:#4a5063; --leo:#e26a1f; --mika:#0f9384; --yui:#6f5cd0;
+    --shadow:0 1px 3px rgba(27,42,94,.06),0 8px 24px rgba(27,42,94,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1020; --panel:#171a2e; --line:#282c44; --ink:#e9ebf7; --sub:#9aa0c0;
+    --navy:#cdd6ff; --navy-soft:#aeb8e6;
+    --kuro:#9aa2bd; --leo:#ff9d5c; --mika:#2fc7b4; --yui:#a897f2;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{ box-sizing:border-box; }
+  .wrap{ font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic UI','Meiryo',system-ui,sans-serif;
+         background:var(--bg); color:var(--ink); margin:0; padding:0 18px 64px;
+         -webkit-font-smoothing:antialiased; line-height:1.75; }
+  .inner{ max-width:560px; margin:0 auto; }
+  .wrap :is(h1,h2,h3,p,ul){ margin:0; }
+
+  /* ---- hero ---- */
+  .hero{ padding:40px 0 18px; text-align:center; }
+  .eyebrow{ font-size:11px; letter-spacing:.28em; font-weight:800; color:var(--sub); text-transform:uppercase; }
+  .wordmark{ display:inline-flex; align-items:center; gap:8px; margin-top:12px; }
+  .wordmark b{ font-size:40px; font-weight:900; letter-spacing:.16em; color:var(--navy); }
+  .gem{ width:34px; height:34px; }
+  .tagline{ margin-top:12px; font-size:17px; font-weight:800; color:var(--navy); text-wrap:balance; line-height:1.7; }
+  .lede{ margin-top:8px; font-size:13px; color:var(--sub); text-wrap:balance; }
+  .rule{ height:3px; border:none; border-radius:99px; background:var(--grad); margin:24px 0; opacity:.9; }
+
+  /* ---- access card ---- */
+  .access{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+           padding:18px 18px 20px; box-shadow:var(--shadow); }
+  .access .lbl{ font-size:11px; font-weight:800; letter-spacing:.14em; color:var(--leo); text-transform:uppercase; }
+  .access .u{ display:block; margin-top:8px; font-size:16px; font-weight:800; color:var(--navy);
+              word-break:break-all; line-height:1.6; text-decoration:none;
+              border-bottom:2px solid color-mix(in srgb, var(--navy) 30%, transparent); padding-bottom:5px; }
+  .access .cta{ display:inline-block; margin-top:14px; background:var(--navy); color:#fff; text-decoration:none;
+                font-weight:800; font-size:14px; padding:11px 22px; border-radius:9999px; }
+  .access .note{ margin-top:14px; font-size:12px; color:var(--sub); line-height:1.7; }
+  .access .note b{ color:var(--ink); }
+
+  /* ---- sections ---- */
+  section{ margin-top:34px; }
+  .kicker{ font-size:11px; font-weight:800; letter-spacing:.2em; color:var(--sub); text-transform:uppercase; }
+  h2{ font-size:21px; font-weight:900; color:var(--navy); margin-top:6px; letter-spacing:.01em; text-wrap:balance; }
+  .body{ margin-top:10px; font-size:14.5px; color:var(--ink); }
+  .body.muted{ color:var(--sub); font-size:13.5px; }
+
+  /* ---- character cards ---- */
+  .chars{ display:grid; gap:10px; margin-top:14px; }
+  .char{ display:flex; gap:13px; align-items:flex-start; background:var(--panel);
+         border:1px solid var(--line); border-left:4px solid var(--c); border-radius:14px;
+         padding:13px 15px; box-shadow:var(--shadow); }
+  .badge{ flex:none; width:40px; height:40px; border-radius:50%; display:grid; place-items:center;
+          font-size:20px; background:color-mix(in srgb, var(--c) 16%, var(--panel)); }
+  .char .nm{ font-size:15px; font-weight:900; color:var(--c); letter-spacing:.04em; }
+  .char .ax{ font-size:11px; color:var(--sub); font-weight:700; }
+  .char .ds{ margin-top:4px; font-size:13px; color:var(--ink); line-height:1.65; }
+
+  /* ---- steps ---- */
+  .steps{ display:grid; gap:12px; margin-top:16px; counter-reset:s; }
+  .step{ display:grid; grid-template-columns:38px 1fr; gap:14px; align-items:start; }
+  .step .n{ counter-increment:s; width:38px; height:38px; border-radius:50%; display:grid; place-items:center;
+            font-size:15px; font-weight:900; color:#fff; background:var(--navy);
+            font-variant-numeric:tabular-nums; }
+  .step .n::before{ content:counter(s); }
+  .step h3{ font-size:15.5px; font-weight:800; color:var(--ink); }
+  .step p{ margin-top:3px; font-size:13.5px; color:var(--sub); line-height:1.7; }
+  .step p em{ font-style:normal; color:var(--ink); font-weight:700; }
+
+  /* ---- tip / safety panels ---- */
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+          padding:18px 18px; box-shadow:var(--shadow); }
+  .panel h2{ font-size:18px; }
+  .tips{ display:grid; gap:11px; margin-top:14px; }
+  .tip{ display:flex; gap:11px; align-items:baseline; font-size:14px; }
+  .tip .dot{ flex:none; width:8px; height:8px; border-radius:50%; margin-top:7px;
+             background:var(--grad); }
+  .tip b{ color:var(--navy); }
+  .safety{ border-color:color-mix(in srgb, var(--leo) 40%, var(--line)); }
+  .safety .kicker{ color:var(--leo); }
+  .safety a{ color:var(--navy); font-weight:800; }
+  .hot{ margin-top:12px; font-size:13.5px; line-height:1.9; color:var(--ink); }
+  .hot b{ color:var(--leo); }
+
+  footer{ margin-top:40px; text-align:center; font-size:12px; color:var(--sub); line-height:1.9; }
+  footer .gemsm{ width:15px; height:15px; vertical-align:-2px; margin:0 3px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="gemg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#8ec5ff"/><stop offset=".4" stop-color="#c9a7f5"/>
+    <stop offset=".7" stop-color="#ffb199"/><stop offset="1" stop-color="#9ae6c9"/>
+  </linearGradient>
+</defs></svg>
+
+<div class="wrap"><div class="inner">
+
+  <header class="hero">
+    <div class="eyebrow">メンバー向け 使い方ガイド</div>
+    <div class="wordmark">
+      <b>PRISM</b>
+      <svg class="gem" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 L22 9 L12 23 L2 9 Z" fill="url(#gemg)" stroke="var(--navy)" stroke-width="1"/></svg>
+    </div>
+    <p class="tagline">答えをくれない。だから、自分で考えはじめる。</p>
+    <p class="lede">ひとりで考えなくていい。でも、AIにも決めさせない。</p>
+  </header>
+
+  <div class="access">
+    <span class="lbl">スマホで開く</span>
+    <a class="u" href="https://prism-aqgn.onrender.com">https://prism-aqgn.onrender.com</a>
+    <a class="cta" href="https://prism-aqgn.onrender.com">▶ PRISMをひらく</a>
+    <p class="note"><b>スマホのブラウザ（Safari / Chrome）で開くだけ。</b>音声で話すには、マイクの許可を聞かれたら「許可」を選んでください。<br>※ しばらく誰も使っていないと、最初の1回だけ起動に30〜60秒ほどかかります（開いたまま待てばOK）。</p>
+  </div>
+
+  <hr class="rule">
+
+  <section>
+    <div class="kicker">What is this</div>
+    <h2>PRISMって、なに？</h2>
+    <p class="body">ひとつの悩みを、<b>性質のちがう4人の“偏った”AI</b>が別々の角度から議論するアプリです。ふつうのAIと違って、<b>答えも結論も出しません</b>。4人の言い合いを聞きながら、「自分は誰に反発するんだろう」「本当は何を大事にしたいんだろう」を見つける——そのためのAIです。</p>
+    <p class="body muted" style="margin-top:10px">モヤモヤが残っても大丈夫。それは“考えが動いている”サインです。</p>
+  </section>
+
+  <section>
+    <div class="kicker">The four lenses</div>
+    <h2>4つの視点</h2>
+    <div class="chars">
+      <div class="char" style="--c:var(--kuro)">
+        <div class="badge">🌑</div>
+        <div><div class="nm">KURO <span class="ax">クリティカル×陰</span></div>
+        <div class="ds">鋭い皮肉家の現実主義者。あなたが避けている現実を、静かに突く。</div></div>
+      </div>
+      <div class="char" style="--c:var(--leo)">
+        <div class="badge">⚡</div>
+        <div><div class="nm">LEO <span class="ax">クリティカル×陽</span></div>
+        <div class="ds">関西弁のエネルギッシュな挑発家。「それ、ほんまに悩むことなん？」と前提をひっくり返す。</div></div>
+      </div>
+      <div class="char" style="--c:var(--mika)">
+        <div class="badge">🔥</div>
+        <div><div class="nm">MIKA <span class="ax">肯定×陽</span></div>
+        <div class="ds">全肯定ギャルの応援者。あなたの可能性と本当の望みを問う。小さくまとまるのを許さない。</div></div>
+      </div>
+      <div class="char" style="--c:var(--yui)">
+        <div class="badge">🌙</div>
+        <div><div class="nm">YUI <span class="ax">肯定×陰</span></div>
+        <div class="ds">ダウナー系メガネの図書委員。言葉にならない気持ちを、急かさず待つ。「まだ決めない」も認める。</div></div>
+      </div>
+    </div>
+    <p class="body muted" style="margin-top:12px">4人まとめて話す「作戦会議」か、1人とじっくり話す「1対1」を選べます。</p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <div class="kicker">How to use</div>
+    <h2>使い方</h2>
+    <div class="steps">
+      <div class="step"><div class="n"></div><div>
+        <h3>誰と話すか選ぶ</h3>
+        <p>入口のカードを横にスワイプ（PCは左右の矢印）。<em>4人の会議</em>か、気になる1人との<em>1対1</em>を選ぶ。踏み込み具合（軽く／ちゃんと／遠慮なく）も選べます。</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>音声で悩みを話す</h3>
+        <p><em>🎤ボタン</em>を押すと音声入力の画面に。まとまってなくてOK、途中で止まってもOK。話し終わったら「この内容で決定」。文字入力でも大丈夫です。</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>4人の議論を聞く（3セッション）</h3>
+        <p>①話の輪郭を崩す → ②異なる立場をぶつける → ③本人の輪郭を映す、の順に進みます。4人が言い合うのを“観戦”しながら、返ってくる問いに答えていく。</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>刺さった／反発した に印をつける</h3>
+        <p>気になった発言に <em>💡刺さった</em> や <em>💥反発した</em> をタップ。あとで見返せて、レポートにも反映されます。</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>最後は「自分の一文」を書く</h3>
+        <p>終わりに<em>「AI立入禁止ゾーン」</em>が出ます。ここだけはAIは一文字も書きません。今の気持ちを、自分の言葉で一文だけ残します（「まだ決めない」でもOK）。</p>
+      </div></div>
+      <div class="step"><div class="n"></div><div>
+        <h3>思考レポートを見る</h3>
+        <p>どの視点に反応したか、考え方のクセを鏡のように映します。<em>優劣ではなく“今週の使い方”</em>です。履歴から過去の相談も見返せます。</p>
+      </div></div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section class="panel">
+    <div class="kicker">Good to know</div>
+    <h2>大切にしてほしいこと</h2>
+    <div class="tips">
+      <div class="tip"><span class="dot"></span><div><b>答えは出ません。</b>それが欠点ではなく、このアプリの中心の機能です。</div></div>
+      <div class="tip"><span class="dot"></span><div><b>うまく話せなくて大丈夫。</b>言葉がまとまらないまま話すほうが、本当のことが残ります。</div></div>
+      <div class="tip"><span class="dot"></span><div><b>「まだ分からない」でOK。</b>急いで結論を出さないことも、ちゃんとした答えです。</div></div>
+      <div class="tip"><span class="dot"></span><div><b>反発してOK。</b>「それは違う」と思った相手ほど、自分の大事なものが見えてきます。</div></div>
+    </div>
+  </section>
+
+  <section class="panel safety">
+    <div class="kicker">If it gets heavy</div>
+    <h2>しんどくなったら</h2>
+    <p class="body">つらい気持ちが強いときは、4人の議論はいったん止まって、相談窓口を案内します。無理に一人で抱えないでください。</p>
+    <p class="hot">
+      <b>24時間子供SOSダイヤル</b> 0120-0-78310（24時間）<br>
+      <b>チャイルドライン</b> 0120-99-7777（16〜21時）<br>
+      <b>よりそいホットライン</b> 0120-279-338（24時間）
+    </p>
+  </section>
+
+  <footer>
+    <svg class="gemsm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 L22 9 L12 23 L2 9 Z" fill="url(#gemg)" stroke="var(--navy)" stroke-width="1"/></svg><br>
+    PRISM — 答えを出さない、思考のためのAI。<br>
+    使ってみて気づいたことは、共有者にどんどん教えてください。
+  </footer>
+
+</div></div>
+</body>
+</html>
